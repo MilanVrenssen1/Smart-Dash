@@ -39,10 +39,12 @@ npm run android:open     # open in Android Studio → Run ▶, or Build → Gene
 
 Skipping the first two steps makes Gradle sync fail. The errors look like *"capacitor-cordova-android-plugins/cordova.variables.gradle does not exist"* or *"project ':capacitor-android' not found"*, and the Run button stays disabled with "No configuration". Run `npm run android:sync` again after every change to `www/`.
 
-To build from the command line on Windows (PowerShell), using the Java that ships with Android Studio:
+**Use Java 21.** Newer Android Studio releases bundle Java 25, and the Gradle version here can't run on it. You'll see *"Unsupported class file major version 69"*. To fix it, install JDK 21 (`winget install EclipseAdoptium.Temurin.21.JDK`), then select it under File → Settings → Build Tools → Gradle → **Gradle JDK**.
+
+To build from the command line on Windows (PowerShell):
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:JAVA_HOME = (Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory | Where-Object Name -like "jdk-21*" | Select-Object -First 1).FullName
 cd android
 .\gradlew.bat assembleDebug   # APK lands in android\app\build\outputs\apk\debug\
 ```
