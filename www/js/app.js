@@ -245,7 +245,7 @@ function boot() {
 
   if (!store.state.settings.onboarded) {
     store.setSettings({ onboarded: true });
-    setTimeout(() => toast('Welcome to Smart Dash', { icon: 'sparkles', detail: 'This is a demo home — tap + to connect your own devices.', duration: 6000 }), 1600);
+    setTimeout(() => toast('Welcome to Smart Dash', { icon: 'sparkles', detail: 'Tap + to connect your devices.', duration: 6000 }), 1600);
   }
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.Capacitor?.isNativePlatform?.()) {

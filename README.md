@@ -2,14 +2,12 @@
 
 **One beautiful dashboard for every smart device in your home.** It runs in any browser, installs as an app (PWA), and ships with a ready-made Android project (Capacitor), so it can go on the Play Store.
 
-- **Connect everything:** Home Assistant (Zigbee, Z-Wave, Matter, Nest, Tuya, IKEA, Sonos, Ring and 2,000+ more brands), Philips Hue, Sonos / IKEA SYMFONISK speakers, Shelly, and any device you can switch with a URL (Tasmota, ESPHome, WLED, IFTTT, Node-RED…).
+- **Connect everything:** Home Assistant (Zigbee, Z-Wave, Matter, Nest, Tuya, IKEA, Sonos, Ring and 2,000+ more brands), Google Home, Philips Hue, Sonos / IKEA SYMFONISK speakers, Shelly, and any device you can switch with a URL (Tasmota, ESPHome, WLED, IFTTT, Node-RED…).
 - **Controls built for each device type:** a brightness slider you drag like a phone's control centre, colour and white-temperature pickers for lights, a thermostat dial you can drag, hold-to-unlock for locks, animated blinds and garage doors, fan speed, a media player and a robot vacuum view.
 - **Scenes and routines:** one tap sets up the whole home. To make a scene, set your devices how you like them and save them. Routines run a scene at a set time.
 - **Energy:** live power use, kWh today, cost, a 24-hour chart and the devices using the most power.
 - **Polish:** dark and light themes, 7 accent colours, a ⌘K command palette, haptics, a reduced-motion setting, keyboard shortcuts and offline support.
 - **Private by design:** everything stays on your device. No account and no cloud.
-
-The app starts with a **demo home** of 26 simulated devices, so every control can be tried right away.
 
 ---
 
@@ -116,7 +114,7 @@ www/                    the app (this is what gets deployed / packaged)
   js/hub.js             routes actions to integrations (optimistic UI, throttling)
   js/devices.js         device type definitions
   js/detail.js          per-device control sheets
-  js/integrations/      demo, homeassistant, hue, shelly, webhook
+  js/integrations/      googlehome, homeassistant, hue, sonos, shelly, webhook
   js/views/             home, devices, scenes, energy, settings
 android/                Capacitor Android project
 assets/icon.png         source icon for Android icon/splash generation

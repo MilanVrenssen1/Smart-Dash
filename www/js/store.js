@@ -13,57 +13,13 @@ import { uid } from './util.js';
 
 const KEY = 'smartdash:v1';
 
-const DEFAULT_SCENES = [
-  {
-    id: 'scene-morning', name: 'Good Morning', icon: 'sunrise', gradient: ['#ffb457', '#ff6b8b'],
-    actions: [
-      { target: 'demo:lr-blinds', patch: { position: 100 } },
-      { target: 'demo:k-pendant', patch: { on: true, brightness: 100, colorTemp: 4200 } },
-      { target: 'demo:k-coffee', patch: { on: true } },
-      { target: 'demo:lr-climate', patch: { mode: 'heat', target: 21.5 } },
-      { target: 'demo:k-speaker', patch: { playing: true, volume: 30 } },
-    ],
-  },
-  {
-    id: 'scene-movie', name: 'Movie Night', icon: 'film', gradient: ['#7c5cff', '#e14bd4'],
-    actions: [
-      { target: 'demo:lr-ceiling', patch: { on: false } },
-      { target: 'demo:lr-strip', patch: { on: true, brightness: 22, color: '#5b3cff' } },
-      { target: 'demo:lr-blinds', patch: { position: 0 } },
-      { target: 'demo:lr-tv', patch: { on: true, playing: true, volume: 34 } },
-      { target: 'demo:k-speaker', patch: { playing: false } },
-    ],
-  },
-  {
-    id: 'scene-away', name: 'Away', icon: 'away', gradient: ['#14b8a6', '#3b82f6'],
-    actions: [
-      { target: 'type:light', patch: { on: false } },
-      { target: 'type:media', patch: { playing: false } },
-      { target: 'type:lock', patch: { locked: true } },
-      { target: 'type:thermostat', patch: { target: 17 } },
-      { target: 'demo:vac', cmd: 'start' },
-    ],
-  },
-  {
-    id: 'scene-night', name: 'Good Night', icon: 'moon', gradient: ['#3b4cff', '#1e1b4b'],
-    actions: [
-      { target: 'type:light', patch: { on: false } },
-      { target: 'demo:b-lamp', patch: { on: true, brightness: 12, color: '#ff8a5b' } },
-      { target: 'type:lock', patch: { locked: true } },
-      { target: 'type:cover', patch: { position: 0 } },
-      { target: 'type:media', patch: { playing: false } },
-      { target: 'type:thermostat', patch: { target: 19 } },
-    ],
-  },
-];
-
-const DEFAULT_ROUTINES = [
-  { id: 'rt-morning', name: 'Weekday wake-up', time: '07:00', days: [1, 2, 3, 4, 5], sceneId: 'scene-morning', enabled: false, lastRun: null },
-  { id: 'rt-night', name: 'Lights out', time: '23:30', days: [0, 1, 2, 3, 4, 5, 6], sceneId: 'scene-night', enabled: false, lastRun: null },
-];
+// IDs of the sample content that used to ship with the built-in demo home.
+const LEGACY_DEMO_SCENES = ['scene-morning', 'scene-movie', 'scene-away', 'scene-night'];
+const LEGACY_DEMO_ROUTINES = ['rt-morning', 'rt-night'];
+const LEGACY_DEMO_ROOMS = ['Living Room', 'Kitchen', 'Bedroom', 'Office', 'Bathroom', 'Entrance', 'Garage', 'Garden'];
 
 const defaults = () => ({
-  version: 1,
+  version: 2,
   settings: {
     name: '',
     theme: 'dark',          // dark | light | auto
@@ -78,10 +34,9 @@ const defaults = () => ({
   rooms: [],
   devices: {},
   overrides: {},
-  scenes: DEFAULT_SCENES,
-  routines: DEFAULT_ROUTINES,
+  scenes: [],
+  routines: [],
   integrations: {
-    demo: { enabled: true },
     googlehome: { enabled: false },
     homeassistant: { enabled: false, url: '', token: '' },
     hue: { enabled: false, bridge: '', username: '' },
@@ -93,12 +48,32 @@ const defaults = () => ({
   energy: { hours: {}, seeded: false },
 });
 
+/** Remove everything the old built-in demo home created, keeping the user's own things. */
+function removeDemo(s) {
+  for (const id of Object.keys(s.devices || {})) if (id.startsWith('demo:')) delete s.devices[id];
+  for (const id of Object.keys(s.overrides || {})) if (id.startsWith('demo:')) delete s.overrides[id];
+  s.scenes = (s.scenes || []).filter((sc) => !LEGACY_DEMO_SCENES.includes(sc.id))
+    .map((sc) => ({ ...sc, actions: sc.actions.filter((a) => !a.target.startsWith('demo:')) }))
+    .filter((sc) => sc.actions.length);
+  s.routines = (s.routines || []).filter((r) => !LEGACY_DEMO_ROUTINES.includes(r.id) && s.scenes.some((sc) => sc.id === r.sceneId));
+  const used = new Set(Object.values(s.devices || {}).map((d) => d.roomId));
+  for (const o of Object.values(s.overrides || {})) if (o.roomId) used.add(o.roomId);
+  s.rooms = (s.rooms || []).filter((r) => used.has(r.id) || !LEGACY_DEMO_ROOMS.includes(r.name));
+  if (s.integrations) delete s.integrations.demo;
+  // Energy history included simulated demo usage; start fresh.
+  s.energy = { hours: {} };
+  s.log = (s.log || []).filter((l) => !/demo/i.test(l.text));
+  s.version = 2;
+  return s;
+}
+
 function load() {
   const base = defaults();
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return base;
-    const s = JSON.parse(raw);
+    let s = JSON.parse(raw);
+    if ((s.version || 1) < 2) s = removeDemo(s);
     return {
       ...base,
       ...s,
@@ -107,6 +82,7 @@ function load() {
         Object.entries(base.integrations).map(([k, v]) => [k, { ...v, ...(s.integrations?.[k] || {}) }]),
       ),
       energy: { ...base.energy, ...s.energy },
+      version: 2,
     };
   } catch (e) {
     console.warn('Could not load saved state', e);

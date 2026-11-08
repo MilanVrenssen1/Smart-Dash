@@ -1,5 +1,5 @@
 // Offline-first service worker: app shell is cached, device APIs always go to the network.
-const VERSION = 'smartdash-v1.2.0';
+const VERSION = 'smartdash-v1.3.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'fonts/plus-jakarta-sans-latin-wght-normal.woff2', 'fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2',
@@ -7,7 +7,7 @@ const SHELL = [
   'js/app.js', 'js/util.js', 'js/icons.js', 'js/store.js', 'js/devices.js', 'js/hub.js', 'js/ui.js',
   'js/cards.js', 'js/detail.js', 'js/energy.js', 'js/connect.js', 'js/palette.js', 'js/theme.js',
   'js/views/home.js', 'js/views/devices.js', 'js/views/scenes.js', 'js/views/energy.js', 'js/views/settings.js',
-  'js/integrations/index.js', 'js/integrations/demo.js', 'js/integrations/homeassistant.js',
+  'js/integrations/index.js', 'js/integrations/homeassistant.js',
   'js/integrations/hue.js', 'js/integrations/sonos.js', 'js/integrations/googlehome.js', 'js/integrations/shelly.js', 'js/integrations/webhook.js',
 ];
 

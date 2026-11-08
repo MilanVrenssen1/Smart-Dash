@@ -72,27 +72,7 @@ function sample() {
   store.emit('energy');
 }
 
-/** Give the demo home a believable past so the charts aren't empty on first launch. */
-function seedDemo() {
-  const e = store.state.energy;
-  if (e.seeded || !store.state.integrations.demo.enabled) return;
-  const now = new Date();
-  for (let i = 23; i >= 1; i--) {
-    const d = new Date(now.getTime() - i * 3600e3);
-    const h = d.getHours();
-    const base = 180;
-    const morning = h >= 6 && h <= 9 ? 650 : 0;
-    const evening = h >= 17 && h <= 22 ? 900 : 0;
-    const night = h < 6 ? -60 : 0;
-    const wh = base + morning + evening + night + Math.random() * 120;
-    e.hours[hourKey(d)] = (e.hours[hourKey(d)] || 0) + wh;
-  }
-  e.seeded = true;
-  store.save();
-}
-
 export function startEnergy() {
-  seedDemo();
   setTimeout(sample, 1500);
   setInterval(sample, SAMPLE_MS);
 }

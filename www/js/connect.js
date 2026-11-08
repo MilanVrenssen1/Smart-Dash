@@ -83,7 +83,7 @@ export function openIntegration(id) {
       ${it.customDevices ? `<div class="custom-devs"></div>` : ''}
       <div class="btn-row">
         ${cfg.enabled ? `<button type="button" class="btn danger ghost" data-a="disconnect">${icon('logout')}<span>Disconnect</span></button>` : ''}
-        <button class="btn primary" data-a="connect">${icon(cfg.enabled ? 'refresh' : 'link')}<span>${cfg.enabled ? 'Save & reconnect' : id === 'demo' ? 'Add demo home' : 'Connect'}</span></button>
+        <button class="btn primary" data-a="connect">${icon(cfg.enabled ? 'refresh' : 'link')}<span>${cfg.enabled ? 'Save & reconnect' : 'Connect'}</span></button>
       </div>
     </form>`;
   const sheet = openSheet({ title: it.name, subtitle: it.tagline, body, className: 'integ-sheet', accent: it.color, onClose: () => off() });

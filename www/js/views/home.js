@@ -114,9 +114,8 @@ function emptyHTML() {
     <div class="orbit big"><span class="o-core">${icon('hub')}</span>
       ${['bulb', 'plug', 'thermometer', 'lock', 'speaker', 'blinds'].map((n, i) => `<span class="o-sat" style="--k:${i}">${icon(n)}</span>`).join('')}</div>
     <h2>Your home, in one place</h2>
-    <p class="muted">Connect Home Assistant, Philips Hue, Shelly or any HTTP device to start controlling everything from here.</p>
-    <div class="btn-row center"><button class="btn primary lg" data-act="add">${icon('plus')}<span>Connect devices</span></button>
-    <button class="btn ghost lg" data-act="demo">${icon('sparkles')}<span>Try the demo home</span></button></div>
+    <p class="muted">Connect Google Home, Sonos, Home Assistant, Philips Hue, Shelly or any HTTP device to control everything from here.</p>
+    <div class="btn-row center"><button class="btn primary lg" data-act="add">${icon('plus')}<span>Connect devices</span></button></div>
   </div>`;
 }
 
@@ -155,7 +154,6 @@ export function render(root) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'search') openPalette();
     if (act === 'add') openConnect();
-    if (act === 'demo') hub.enable('demo').catch(() => {});
     const chip = e.target.closest('[data-room]');
     if (chip) {
       roomFilter = chip.dataset.room;

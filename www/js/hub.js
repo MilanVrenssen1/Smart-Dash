@@ -163,7 +163,7 @@ export const hub = {
     return true;
   },
 
-  /** Resolve a scene/routine target ('demo:x', 'type:light', 'room:<id>') to device ids. */
+  /** Resolve a scene/routine target ('homeassistant:light.x', 'type:light', 'room:<id>') to device ids. */
   resolve(target) {
     if (target.startsWith('type:')) {
       const t = target.slice(5);
