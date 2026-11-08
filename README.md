@@ -59,11 +59,51 @@ To change the app icon, replace `assets/icon.png` (1024×1024) and run
 
 | Service | What you need |
 |---|---|
+| **Google Home** | Android app only, with a one-time setup (see [Google Home](#google-home) below). Brings in your Matter lights and plugs with their rooms. |
 | **Home Assistant** | Your server URL plus a *long-lived access token* (Profile → Security → Long-lived access tokens). Rooms come in from your HA areas, and updates are live over WebSocket. |
 | **Philips Hue** | Tap **Find bridge**, press the bridge's link button, then tap **Pair**. |
 | **Sonos / IKEA SYMFONISK** | Each speaker's IP address (Sonos app → Settings → System → About My System). Supports play/pause, skip, volume and now-playing info. Android app only, because browsers block Sonos. |
 | **Shelly** | The IP address of each device. Gen 1 and Gen 2/3/4 devices both work, including power metering and roller shutters. |
 | **Custom HTTP** | An on URL and an off URL for each device, e.g. Tasmota `http://IP/cm?cmnd=Power%20On`. |
+
+## Google Home
+
+Smart Dash uses Google's official **Google Home APIs** to control the Matter lights and plugs in your Google Home. These APIs are in open beta, which brings two limits:
+
+- They only work in the **Android app**.
+- Google doesn't publish the SDK on a public repository, so you download it once yourself.
+
+Requirements:
+- A Google hub that supports the Home APIs, such as a Nest Mini, Nest Audio, Nest Hub or Google TV Streamer.
+- Android 10 or newer on your phone.
+
+**1. Download the SDK**
+1. Go to <https://developers.home.google.com/apis/android/sdk> and sign in with the **same Google account** you use in Google Home.
+2. Download the Android SDK.
+3. Unzip it into `android/google-home-sdk/`, so that this folder exists: `android/google-home-sdk/com/google/android/gms/play-services-home/<version>/`. If you prefer, `%USERPROFILE%\.m2\repository\com\google\android\gms\play-services-home\<version>\` works too.
+4. Run `npx cap sync android` and sync Gradle in Android Studio. The Build output should say *"Google Home APIs SDK … found — enabling Google Home support"*. Without the SDK, the app still builds normally, just without Google Home.
+
+**2. Get your app's SHA-1 fingerprint**
+In PowerShell, inside the `android` folder, run `.\gradlew.bat signingReport`. Copy the **SHA1** line under `Variant: debug`.
+
+**3. Create a Google sign-in for the app (Google Cloud console, free)**
+1. Go to <https://console.cloud.google.com/> and create a project, e.g. "Smart Dash".
+2. Go to **APIs & Services → OAuth consent screen**:
+   - User type: **External**.
+   - Fill in the app name and your email.
+   - Skip scopes.
+   - Under **Test users / Audience**, add your own Google account.
+3. Go to **APIs & Services → Credentials → Create credentials → OAuth client ID**:
+   - Type: **Android**.
+   - Package name: `com.smartdash.app`.
+   - Paste the SHA-1 from step 2.
+
+**4. Connect**
+1. Run the app from Android Studio.
+2. Tap **+ → Google Home → Connect**.
+3. Choose your Google account and your home.
+
+Supported now: on/off lights, dimmable lights, colour-temperature lights, colour lights and plugs. The native code is in `android/app/src/googlehome/` and the web side is in `www/js/integrations/googlehome.js`.
 
 ## Project layout
 

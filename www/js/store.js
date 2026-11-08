@@ -82,6 +82,7 @@ const defaults = () => ({
   routines: DEFAULT_ROUTINES,
   integrations: {
     demo: { enabled: true },
+    googlehome: { enabled: false },
     homeassistant: { enabled: false, url: '', token: '' },
     hue: { enabled: false, bridge: '', username: '' },
     sonos: { enabled: false, hosts: '' },

@@ -1,7 +1,20 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    
+    // Google Home APIs SDK: Google distributes it as a manual download (see README).
+    // Native Google Home support is compiled in only when the SDK is found, so the
+    // app keeps building without it.
+    def homeSdkRoots = [
+        new File(System.getProperty('user.home'), '.m2/repository/com/google/android/gms/play-services-home'),
+        new File(rootDir, 'google-home-sdk/com/google/android/gms/play-services-home'),
+    ]
+    def homeSdkVersions = homeSdkRoots.findAll { it.isDirectory() }
+        .collectMany { root -> root.listFiles().findAll { it.isDirectory() && it.name ==~ /(1[7-9]|[2-9]\d)\..*/ }*.name }
+        .unique().sort()
+    ext.googleHomeSdkVersion = project.findProperty('googleHomeSdkVersion') ?: (homeSdkVersions ? homeSdkVersions.last() : null)
+    if (project.findProperty('googleHome') == 'false') ext.googleHomeSdkVersion = null
+    ext.kotlinVersion = '2.4.0'
+
     repositories {
         google()
         mavenCentral()
@@ -9,6 +22,7 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        if (googleHomeSdkVersion) classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -21,6 +35,20 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Locally installed Google Home APIs SDK (manual download), used for those two modules only.
+        maven {
+            url "${rootDir}/google-home-sdk"
+            content {
+                includeModule 'com.google.android.gms', 'play-services-home'
+                includeModule 'com.google.android.gms', 'play-services-home-types'
+            }
+        }
+        mavenLocal {
+            content {
+                includeModule 'com.google.android.gms', 'play-services-home'
+                includeModule 'com.google.android.gms', 'play-services-home-types'
+            }
+        }
     }
 }
 

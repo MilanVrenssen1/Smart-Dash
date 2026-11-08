@@ -52,3 +52,29 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+
+// ---- Google Home APIs (only when the SDK is installed; see README "Google Home") ----
+if (rootProject.ext.googleHomeSdkVersion) {
+    def homeSdk = rootProject.ext.googleHomeSdkVersion
+    println "Smart Dash: Google Home APIs SDK $homeSdk found — enabling Google Home support"
+    apply plugin: 'org.jetbrains.kotlin.android'
+    android {
+        defaultConfig {
+            minSdkVersion 29   // required by the Home APIs SDK (Android 10+)
+        }
+        sourceSets {
+            main.java.srcDirs += 'src/googlehome/java'
+        }
+    }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
+    }
+    dependencies {
+        implementation "com.google.android.gms:play-services-home:$homeSdk"
+        implementation "com.google.android.gms:play-services-home-types:$homeSdk"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2"
+    }
+}
