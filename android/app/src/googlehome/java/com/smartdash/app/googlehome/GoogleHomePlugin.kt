@@ -103,7 +103,7 @@ class GoogleHomePlugin : Plugin() {
                 }
             } catch (e: HomeException) {
                 Log.e(TAG, "connect failed", e)
-                call.reject(e.message ?: "Google Home error", "HOME_${e.code}", e)
+                call.reject(e.message ?: "Google Home error", "HOME_ERROR", e)
             } catch (e: Exception) {
                 Log.e(TAG, "connect failed", e)
                 call.reject(e.message ?: "Google Home error", e)
@@ -128,7 +128,7 @@ class GoogleHomePlugin : Plugin() {
                 call.resolve(JSObject().put("home", structure.name).put("devices", list))
             } catch (e: HomeException) {
                 Log.e(TAG, "getDevices failed", e)
-                call.reject(e.message ?: "Google Home error", "HOME_${e.code}", e)
+                call.reject(e.message ?: "Google Home error", "HOME_ERROR", e)
             } catch (e: Exception) {
                 Log.e(TAG, "getDevices failed", e)
                 call.reject(e.message ?: "Couldn't load your Google Home devices", e)
@@ -218,7 +218,7 @@ class GoogleHomePlugin : Plugin() {
                 call.resolve()
             } catch (e: HomeException) {
                 Log.e(TAG, "setState failed", e)
-                call.reject(e.message ?: "Google Home command failed", "HOME_${e.code}", e)
+                call.reject(e.message ?: "Google Home command failed", "HOME_ERROR", e)
             } catch (e: Exception) {
                 Log.e(TAG, "setState failed", e)
                 call.reject(e.message ?: "Google Home command failed", e)
