@@ -1,0 +1,17 @@
+{
+  "appId": "com.smartdash.app",
+  "appName": "Smart Dash",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#07080d"
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "StatusBar": { "overlaysWebView": false, "style": "DARK", "backgroundColor": "#07080d" }
+  }
+}

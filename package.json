@@ -1,0 +1,21 @@
+{
+  "name": "smart-dash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart Dash — one beautiful dashboard for every smart device in your home. Web app + Android (Capacitor).",
+  "scripts": {
+    "dev": "npx --yes serve www -l 5173",
+    "android:init": "npx cap add android && npx @capacitor/assets generate --android --iconBackgroundColor '#07080d' --splashBackgroundColor '#07080d'",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npx cap run android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/status-bar": "^8.0.4"
+  }
+}
