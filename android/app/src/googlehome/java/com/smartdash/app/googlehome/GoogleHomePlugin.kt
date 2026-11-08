@@ -27,6 +27,7 @@ import com.google.home.matter.standard.LevelControlTrait
 import com.google.home.matter.standard.OnOff
 import com.google.home.matter.standard.OnOffLightDevice
 import com.google.home.matter.standard.OnOffPluginUnitDevice
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +53,9 @@ import kotlin.math.roundToInt
 @CapacitorPlugin(name = "GoogleHome")
 class GoogleHomePlugin : Plugin() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // Never let a Google Home failure take the whole app down.
+    private val crashGuard = CoroutineExceptionHandler { _, e -> Log.e(TAG, "Unhandled Google Home error", e) }
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main + crashGuard)
     private lateinit var home: HomeClient
     private val watchers = mutableMapOf<String, Job>()
 
@@ -103,9 +106,9 @@ class GoogleHomePlugin : Plugin() {
             } catch (e: HomeException) {
                 Log.e(TAG, "connect failed", e)
                 call.reject(e.message ?: "Google Home error", "HOME_ERROR", e)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e(TAG, "connect failed", e)
-                call.reject(e.message ?: "Google Home error", e)
+                call.reject("${e.javaClass.simpleName}: ${e.message ?: "Google Home error"}", e as? Exception)
             }
         }
     }
@@ -128,9 +131,9 @@ class GoogleHomePlugin : Plugin() {
             } catch (e: HomeException) {
                 Log.e(TAG, "getDevices failed", e)
                 call.reject(e.message ?: "Google Home error", "HOME_ERROR", e)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e(TAG, "getDevices failed", e)
-                call.reject(e.message ?: "Couldn't load your Google Home devices", e)
+                call.reject("${e.javaClass.simpleName}: ${e.message ?: "Couldn't load your Google Home devices"}", e as? Exception)
             }
         }
     }
@@ -149,14 +152,14 @@ class GoogleHomePlugin : Plugin() {
                     watchers[device.id.id] = scope.launch {
                         try {
                             flow.collect { type -> notifyListeners("deviceChanged", describe(device, type, rooms)) }
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             Log.w(TAG, "watch ${device.name} stopped", e)
                         }
                     }
                 }
                 call.resolve()
-            } catch (e: Exception) {
-                call.reject(e.message ?: "Couldn't watch Google Home devices", e)
+            } catch (e: Throwable) {
+                call.reject("${e.javaClass.simpleName}: ${e.message ?: "Couldn't watch Google Home devices"}", e as? Exception)
             }
         }
     }
@@ -218,9 +221,9 @@ class GoogleHomePlugin : Plugin() {
             } catch (e: HomeException) {
                 Log.e(TAG, "setState failed", e)
                 call.reject(e.message ?: "Google Home command failed", "HOME_ERROR", e)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 Log.e(TAG, "setState failed", e)
-                call.reject(e.message ?: "Google Home command failed", e)
+                call.reject("${e.javaClass.simpleName}: ${e.message ?: "Google Home command failed"}", e as? Exception)
             }
         }
     }
