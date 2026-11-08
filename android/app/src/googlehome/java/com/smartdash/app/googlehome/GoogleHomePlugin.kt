@@ -14,7 +14,6 @@ import com.google.home.HomeClient
 import com.google.home.HomeConfig
 import com.google.home.HomeDevice
 import com.google.home.HomeException
-import com.google.home.Id
 import com.google.home.PermissionsResultStatus
 import com.google.home.PermissionsState
 import com.google.home.matter.standard.ColorControl
@@ -174,7 +173,7 @@ class GoogleHomePlugin : Plugin() {
         val id = call.getString("id") ?: return call.reject("Missing device id")
         scope.launch {
             try {
-                val device = home.devices().get(Id(id)) ?: return@launch call.reject("Device not found")
+                val device = home.devices().list().firstOrNull { it.id.id == id } ?: return@launch call.reject("Device not found")
                 val type = primaryType(device) ?: return@launch call.reject("Unsupported device")
                 val onOff = type.trait(OnOff)
                 val level = type.trait(LevelControl)
