@@ -32,9 +32,19 @@ Open it on your phone (same Wi-Fi) at `http://<your-pc-ip>:5173`, then choose **
 The `android/` folder is a complete Android Studio project.
 
 ```bash
-npm install
-npm run android:sync     # copy the latest ./www into the Android project
+npm install              # REQUIRED first: the Android project links to Capacitor inside node_modules
+npm run android:sync     # REQUIRED: copies ./www into the Android project and generates capacitor-cordova-android-plugins/
 npm run android:open     # open in Android Studio → Run ▶, or Build → Generate Signed APK/Bundle
+```
+
+Skipping the first two steps makes Gradle sync fail. The errors look like *"capacitor-cordova-android-plugins/cordova.variables.gradle does not exist"* or *"project ':capacitor-android' not found"*, and the Run button stays disabled with "No configuration". Run `npm run android:sync` again after every change to `www/`.
+
+To build from the command line on Windows (PowerShell), using the Java that ships with Android Studio:
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+cd android
+.\gradlew.bat assembleDebug   # APK lands in android\app\build\outputs\apk\debug\
 ```
 
 Requirements: Android Studio with SDK 36+ and JDK 21.
