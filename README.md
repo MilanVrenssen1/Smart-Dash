@@ -2,7 +2,7 @@
 
 **One beautiful dashboard for every smart device in your home.** It runs in any browser, installs as an app (PWA), and ships with a ready-made Android project (Capacitor), so it can go on the Play Store.
 
-- **Connect everything:** Home Assistant (Zigbee, Z-Wave, Matter, Nest, Tuya, IKEA, Sonos, Ring and 2,000+ more brands), Philips Hue, Shelly, and any device you can switch with a URL (Tasmota, ESPHome, WLED, IFTTT, Node-RED…).
+- **Connect everything:** Home Assistant (Zigbee, Z-Wave, Matter, Nest, Tuya, IKEA, Sonos, Ring and 2,000+ more brands), Philips Hue, Sonos / IKEA SYMFONISK speakers, Shelly, and any device you can switch with a URL (Tasmota, ESPHome, WLED, IFTTT, Node-RED…).
 - **Controls built for each device type:** a brightness slider you drag like a phone's control centre, colour and white-temperature pickers for lights, a thermostat dial you can drag, hold-to-unlock for locks, animated blinds and garage doors, fan speed, a media player and a robot vacuum view.
 - **Scenes and routines:** one tap sets up the whole home. To make a scene, set your devices how you like them and save them. Routines run a scene at a set time.
 - **Energy:** live power use, kWh today, cost, a 24-hour chart and the devices using the most power.
@@ -61,6 +61,7 @@ To change the app icon, replace `assets/icon.png` (1024×1024) and run
 |---|---|
 | **Home Assistant** | Your server URL plus a *long-lived access token* (Profile → Security → Long-lived access tokens). Rooms come in from your HA areas, and updates are live over WebSocket. |
 | **Philips Hue** | Tap **Find bridge**, press the bridge's link button, then tap **Pair**. |
+| **Sonos / IKEA SYMFONISK** | Each speaker's IP address (Sonos app → Settings → System → About My System). Supports play/pause, skip, volume and now-playing info. Android app only, because browsers block Sonos. |
 | **Shelly** | The IP address of each device. Gen 1 and Gen 2/3/4 devices both work, including power metering and roller shutters. |
 | **Custom HTTP** | An on URL and an off URL for each device, e.g. Tasmota `http://IP/cm?cmnd=Power%20On`. |
 

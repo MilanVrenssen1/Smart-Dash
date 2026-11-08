@@ -84,6 +84,7 @@ const defaults = () => ({
     demo: { enabled: true },
     homeassistant: { enabled: false, url: '', token: '' },
     hue: { enabled: false, bridge: '', username: '' },
+    sonos: { enabled: false, hosts: '' },
     shelly: { enabled: false, hosts: '' },
     webhook: { enabled: false, devices: [] },
   },
