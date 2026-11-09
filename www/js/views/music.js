@@ -68,7 +68,7 @@ function playerHTML() {
 
     <section class="section">
       <div class="section-head"><h2>Your playlists</h2></div>
-      <div class="sp-lists" id="sp-lists"><p class="muted small">Loading…</p></div>
+      <div class="sp-lists hscroll" id="sp-lists"><p class="muted small">Loading…</p></div>
     </section>
 
     <p class="sp-foot"><button class="link" data-a="signout">${icon('logout')} Disconnect Spotify</button></p>`;
@@ -172,9 +172,13 @@ export function render(root) {
   async function loadPlaylists() {
     try {
       const lists = await sp.playlists();
-      $('#sp-lists').innerHTML = lists.length ? lists.map((p) => `<button class="sp-pl" data-play-kind="playlist" data-uri="${esc(p.uri)}">
-          <span class="sp-pl-art" ${img(p.images) ? `style="background-image:url('${esc(img(p.images))}')"` : ''}>${img(p.images) ? '' : icon('music')}</span>
-          <b>${esc(p.name)}</b></button>`).join('')
+      $('#sp-lists').innerHTML = lists.length ? lists.map((p, i) => {
+          const art = img(p.images);
+          const count = p.items?.total ?? p.tracks?.total;
+          return `<button class="sp-pl" data-play-kind="playlist" data-uri="${esc(p.uri)}" style="--i:${i}">
+            <span class="sp-pl-art"><i class="sp-pl-ph">${icon('music')}</i>${art ? `<img src="${esc(art)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}<span class="sp-pl-play">${icon('play')}</span></span>
+            <b>${esc(p.name)}</b>${count != null ? `<small>${count} ${count === 1 ? 'track' : 'tracks'}</small>` : ''}</button>`;
+        }).join('')
         : '<p class="muted small">No playlists yet.</p>';
     } catch (e) { $('#sp-lists').innerHTML = `<p class="muted small">${esc(e.message)}</p>`; }
   }

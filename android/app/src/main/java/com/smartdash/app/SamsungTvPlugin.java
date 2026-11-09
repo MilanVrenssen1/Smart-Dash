@@ -49,6 +49,7 @@ public class SamsungTvPlugin extends Plugin {
     private final Map<String, WebSocket> sockets = new ConcurrentHashMap<>();
     private final Map<String, PluginCall> pendingConnect = new ConcurrentHashMap<>();
     private final Map<String, PluginCall> pendingApps = new ConcurrentHashMap<>();
+    private final Map<String, PluginCall> pendingIcons = new ConcurrentHashMap<>(); // host -> call (one at a time per TV)
     private final Map<String, String> tokens = new ConcurrentHashMap<>();
 
     @Override
@@ -138,11 +139,23 @@ public class SamsungTvPlugin extends Plugin {
                                         JSObject o = new JSObject();
                                         o.put("appId", a.optString("appId"));
                                         o.put("name", a.optString("name"));
+                                        o.put("icon", a.optString("icon", ""));
                                         apps.put(o);
                                     }
                                 }
                                 JSObject res = new JSObject();
                                 res.put("apps", apps);
+                                c.resolve(res);
+                            }
+                            break;
+                        }
+                        case "ed.apps.icon": {
+                            PluginCall c = pendingIcons.remove(host);
+                            if (c != null) {
+                                String b64 = data != null ? data.optString("imageBase64", "") : "";
+                                if (b64.isEmpty()) { c.reject("No icon", "NO_ICON"); break; }
+                                JSObject res = new JSObject();
+                                res.put("data", b64);
                                 c.resolve(res);
                             }
                             break;
@@ -220,6 +233,28 @@ public class SamsungTvPlugin extends Plugin {
             }, 6000);
         } catch (Exception e) {
             pendingApps.remove(host);
+            call.reject(e.getMessage(), e);
+        }
+    }
+
+    /** Fetches an app icon from the TV. Resolves { data: base64 image }. Call one at a time per TV. */
+    @PluginMethod
+    public void getAppIcon(PluginCall call) {
+        String host = call.getString("host", "");
+        WebSocket ws = sockets.get(host);
+        if (ws == null) { call.reject("Not connected to the TV", "NOT_CONNECTED"); return; }
+        try {
+            PluginCall previous = pendingIcons.put(host, call);
+            if (previous != null) previous.reject("Superseded");
+            JSONObject data = new JSONObject().put("iconPath", call.getString("iconPath", ""));
+            JSONObject params = new JSONObject().put("event", "ed.apps.icon").put("to", "host").put("data", data);
+            ws.send(new JSONObject().put("method", "ms.channel.emit").put("params", params).toString());
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                PluginCall c = pendingIcons.get(host);
+                if (c == call) { pendingIcons.remove(host); c.reject("The TV didn't send the icon", "TIMEOUT"); }
+            }, 5000);
+        } catch (Exception e) {
+            pendingIcons.remove(host);
             call.reject(e.getMessage(), e);
         }
     }

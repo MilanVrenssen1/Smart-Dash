@@ -8,7 +8,7 @@ import { INTEGRATIONS } from './integrations/index.js';
 import { typeDef, statusText, glowColor, lightColor, sensorKind, sensorText, MODE_LABEL, devIcon } from './devices.js';
 import { openSheet, haptic, segmented, promptDialog, confirmDialog, toast } from './ui.js';
 import { sensorHistory } from './energy.js';
-import { COMMON_APPS } from './integrations/samsungtv.js';
+import { COMMON_APPS, tvIcon } from './integrations/samsungtv.js';
 
 const SWATCHES = ['#ff5f5f', '#ff9f43', '#ffd166', '#a3e635', '#34d399', '#22d3ee', '#3b82f6', '#6366f1', '#7c5cff', '#c084fc', '#f472b6', '#ffe4c4'];
 
@@ -721,14 +721,14 @@ function buildTv(d, root) {
     root.querySelector('.hero-caption').textContent = starting ? 'Turning on…' : on ? 'On' : 'Off';
     root.querySelector('.tv-hint').textContent = starting ? 'This can take up to 15 seconds' : on ? '' : (d.attrs.mac ? 'Tap to turn on' : 'Turn the TV on with its remote once so Smart Dash learns how to wake it');
     const apps = d.attrs.apps?.length ? d.attrs.apps : COMMON_APPS;
-    const sig = apps.map((a) => a.appId).join();
+    const sig = apps.map((a) => a.appId).join() + (d.attrs.iconsVersion || '');
     const grid = root.querySelector('.tv-apps');
     if (grid.dataset.sig !== sig) {
       grid.dataset.sig = sig;
       const pinned = COMMON_APPS.map((c) => c.name);
       const sorted = [...apps].sort((a, b) => (pinned.indexOf(a.name) + 1 || 99) - (pinned.indexOf(b.name) + 1 || 99) || a.name.localeCompare(b.name));
       grid.innerHTML = sorted.map((a, i) => `<button class="tv-app" data-app="${esc(a.appId)}" data-name="${esc(a.name)}" style="--c:${appColor(a.name)};--i:${i}">
-        <span class="tv-app-ic">${esc(a.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 2) || '?')}</span><span class="tv-app-n">${esc(a.name)}</span></button>`).join('');
+        ${tvIcon(a.appId) ? `<span class="tv-app-ic has-img"><img src="${tvIcon(a.appId)}" alt=""></span>` : `<span class="tv-app-ic">${esc(a.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 2) || '?')}</span>`}<span class="tv-app-n">${esc(a.name)}</span></button>`).join('');
     }
   };
   update(d);

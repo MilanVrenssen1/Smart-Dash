@@ -7,10 +7,48 @@ let poll = null;
 let hosts = [];
 const info = {};        // host -> { name, model, mac, secure }
 const turningOn = {};   // host -> timestamp of last wake attempt
+const iconsTried = {};  // host -> app list/icons refreshed this session
 
 const plugin = () => window.Capacitor?.Plugins?.SamsungTv;
 const isNative = () => !!window.Capacitor?.isNativePlatform?.();
 const clean = (h) => h.trim().replace(/^https?:\/\//, '').replace(/[:/].*$/, '');
+
+/* ---------------- App icons (fetched once from the TV, cached small) ---------------- */
+const ICON_KEY = 'smartdash:tvicons';
+let iconCache = (() => { try { return JSON.parse(localStorage.getItem(ICON_KEY)) || {}; } catch { return {}; } })();
+export const tvIcon = (appId) => iconCache[appId] || null;
+
+function shrink(dataUrl, size = 128) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      try { resolve(c.toDataURL('image/webp', 0.86)); } catch { resolve(dataUrl); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
+async function loadIcons(host, apps) {
+  let added = 0;
+  for (const a of apps) {
+    if (iconCache[a.appId] || !a.icon) continue;
+    try {
+      const { data } = await plugin().getAppIcon({ host, iconPath: a.icon });
+      const small = await shrink(`data:image/png;base64,${data}`);
+      if (small) { iconCache[a.appId] = small; added++; }
+    } catch { /* TV didn't answer for this one */ }
+  }
+  if (added) {
+    try { localStorage.setItem(ICON_KEY, JSON.stringify(iconCache)); } catch { /* storage full */ }
+    api.upsert({ nid: host, attrs: { iconsVersion: Date.now() } });
+  }
+}
 
 // Well-known Samsung app IDs, used when the TV won't share its installed-app list.
 export const COMMON_APPS = [
@@ -69,7 +107,9 @@ async function loadApps(host) {
   try {
     const { apps } = await plugin().getApps({ host });
     if (apps?.length) {
-      api.upsert({ nid: host, attrs: { apps: apps.sort((a, b) => a.name.localeCompare(b.name)) } });
+      const sorted = apps.sort((a, b) => a.name.localeCompare(b.name));
+      api.upsert({ nid: host, attrs: { apps: sorted.map(({ appId, name }) => ({ appId, name })) } });
+      loadIcons(host, sorted);
     }
   } catch { /* older TVs don't support it — the common list is used instead */ }
 }
@@ -94,7 +134,8 @@ async function refresh(host, initial = false) {
     delete turningOn[host];
     try {
       await ensureSocket(host);
-      if (!api.get(host)?.attrs.apps) loadApps(host);
+      // Refresh the app list (and fetch any missing icons) once per session.
+      if (!api.get(host)?.attrs.apps || !iconsTried[host]) { iconsTried[host] = true; loadApps(host); }
     } catch (e) {
       if (initial) throw e;
     }
