@@ -34,6 +34,8 @@ export function applyTheme() {
   if (meta) meta.content = theme === 'light' ? '#f4f1eb' : '#0b0b0c';
   // Native status bar (Capacitor) if the plugin is present.
   try {
+    // Capacitor 8 (Android 15+ edge-to-edge): icon colour of the system bars.
+    window.Capacitor?.Plugins?.SystemBars?.setStyle?.({ style: theme === 'light' ? 'LIGHT' : 'DARK' })?.catch?.(() => {});
     const SB = window.Capacitor?.Plugins?.StatusBar;
     SB?.setStyle?.({ style: theme === 'light' ? 'LIGHT' : 'DARK' });
     SB?.setBackgroundColor?.({ color: theme === 'light' ? '#f4f1eb' : '#0b0b0c' });

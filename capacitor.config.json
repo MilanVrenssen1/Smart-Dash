@@ -11,7 +11,18 @@
     "backgroundColor": "#0b0b0c"
   },
   "plugins": {
-    "CapacitorHttp": { "enabled": true },
-    "StatusBar": { "overlaysWebView": false, "style": "DARK", "backgroundColor": "#0b0b0c" }
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#0b0b0c"
+    },
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK",
+      "initialViewportFitValueHint": "cover"
+    }
   }
 }

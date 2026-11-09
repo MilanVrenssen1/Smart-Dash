@@ -1614,3 +1614,13 @@ body { font-size: 14.5px; letter-spacing: -0.003em; font-feature-settings: 'cv11
 }
 /* In panel mode the dock sits a little lower and the view uses the full height. */
 .panel-mode .view { padding-top: 28px; }
+
+/* Android 15+ edge-to-edge: Capacitor provides --safe-area-inset-* when env() isn't available. */
+:root { --sa-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)); --sa-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)); }
+.view { padding-top: calc(var(--sa-top) + 22px); padding-bottom: calc(130px + var(--sa-bottom)); }
+@media (min-width: 900px) { .view { padding-top: calc(var(--sa-top) + 40px); } }
+.panel-mode .view { padding-top: calc(var(--sa-top) + 28px); }
+.tabbar { bottom: calc(14px + var(--sa-bottom)); }
+#toasts { bottom: calc(86px + var(--sa-bottom)); }
+@media (max-width: 760px) { .device-sheet .sheet { padding-top: var(--sa-top); } }
+html, body { background-color: var(--bg); }
