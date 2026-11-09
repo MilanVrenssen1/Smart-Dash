@@ -1567,3 +1567,50 @@ body { font-size: 14.5px; letter-spacing: -0.003em; font-feature-settings: 'cv11
 @media (min-width: 900px) { .hscroll { scroll-padding-inline: 0; } }
 .hero-time small { font-size: 0.3em; font-style: italic; letter-spacing: 0; margin-left: 0.12em; color: var(--muted); }
 .hero-summary, .rc-name, .mood-name { font-variant-numeric: lining-nums; font-feature-settings: 'lnum'; }
+
+/* ---------- Wall panel: night clock ---------- */
+.nightclock { position: fixed; inset: 0; z-index: 300; background: #000; display: grid; place-items: center; opacity: 0; transition: opacity 0.9s var(--ease); cursor: pointer; }
+.nightclock.in { opacity: 1; }
+.nc-inner { text-align: center; transform: translate(var(--dx), var(--dy)); transition: transform 4s var(--ease); color: #d9d2c4; }
+.nc-time { font-family: var(--serif); font-weight: 400; font-size: clamp(110px, 24vw, 260px); line-height: 0.9; letter-spacing: -0.03em; font-variant-numeric: lining-nums; font-feature-settings: 'lnum'; opacity: 0.85; }
+.nc-time small { font-size: 0.28em; font-style: italic; margin-left: 0.1em; color: #8e8981; }
+.nc-date { margin-top: 18px; font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: #8e8981; }
+.nc-line { margin-top: 10px; font-family: var(--serif); font-size: 22px; color: #6d6962; }
+
+/* ---------- Wall panel: settings ---------- */
+.panel-intro { margin: -4px 0 8px; }
+.panel-opts { transition: opacity 0.3s; }
+.panel-opts.off { opacity: 0.35; pointer-events: none; }
+.panel-opts .field { margin: 14px 0 6px; }
+.pin-lock { max-width: 360px; margin: 8vh auto 0; text-align: center; }
+.pin-lock .title { margin-bottom: 10px; }
+.pin-dots { display: flex; justify-content: center; gap: 16px; margin: 30px 0 28px; }
+.pin-dots i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--border-strong); transition: background 0.2s, border-color 0.2s; }
+.pin-dots i.on { background: var(--accent); border-color: var(--accent); }
+.pin-dots.shake { animation: shake 0.45s; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 76px); gap: 14px; justify-content: center; }
+.pin-k { width: 76px; height: 76px; border-radius: 50%; border: 1px solid var(--border); background: transparent; color: var(--text); font-family: var(--serif); font-size: 30px; transition: background 0.2s, transform 0.2s var(--ease); }
+.pin-k:active { background: var(--surface-3); transform: scale(0.94); }
+
+/* ---------- Tablet / wide landscape: two-column home ---------- */
+@media (min-width: 900px) and (orientation: landscape) {
+  #view[data-page='home'] {
+    max-width: 1280px; display: grid; grid-template-columns: minmax(360px, 0.85fr) 1.15fr; column-gap: clamp(40px, 6vw, 90px);
+    grid-template-areas: 'mast mast' 'hero rooms' 'moods rooms' 'act favs' '. favs'; align-content: start;
+  }
+  #view[data-page='home'] > .masthead { grid-area: mast; }
+  #view[data-page='home'] > .hero { grid-area: hero; padding-top: 10px; }
+  #view[data-page='home'] > .moods-sec { grid-area: moods; }
+  #view[data-page='home'] > .rooms-sec { grid-area: rooms; margin-top: 30px; }
+  #view[data-page='home'] > .favs-sec { grid-area: favs; }
+  #view[data-page='home'] > .act-sec { grid-area: act; }
+  #view[data-page='home'] > .empty-hero { grid-column: 1 / -1; }
+  #view[data-page='home'] .moods { flex-wrap: wrap; row-gap: 4px; overflow: visible; }
+  #view[data-page='home'] .rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; margin: 0; padding: 0; }
+  #view[data-page='home'] .room-card { width: auto; aspect-ratio: 5 / 4; }
+  #view[data-page='home'] .rc-name { font-size: 30px; }
+  #view[data-page='home'] .hero-time { font-size: clamp(110px, 12vw, 170px); }
+}
+/* In panel mode the dock sits a little lower and the view uses the full height. */
+.panel-mode .view { padding-top: 28px; }

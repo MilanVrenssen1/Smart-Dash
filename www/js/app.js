@@ -17,6 +17,7 @@ import * as Scenes from './views/scenes.js';
 import * as Music from './views/music.js';
 import * as Room from './views/room.js';
 import { initSpotify } from './spotify.js';
+import { startPanel, panelSettings } from './panel.js';
 import * as Energy from './views/energy.js';
 import * as Settings from './views/settings.js';
 
@@ -90,6 +91,7 @@ function render(route, { soft = false } = {}) {
   cleanup = null;
   const scroll = soft ? window.scrollY : 0;
   current = route;
+  view.dataset.page = route;
   cleanup = ROUTES[route].view.render(view, currentParam) || null;
   setActiveNav(route);
   view.classList.toggle('soft', soft);
@@ -184,7 +186,7 @@ function wireNative() {
   App?.addListener?.('backButton', () => {
     if (topSheet()) topSheet().close();
     else if (current !== 'home') location.hash = '#/home';
-    else App.exitApp?.();
+    else if (!panelSettings().enabled) App.exitApp?.(); // a wall panel never closes itself
   });
   document.addEventListener('visibilitychange', () => {
     // Reconnect quickly when the app comes back to the foreground.
@@ -248,6 +250,7 @@ function boot() {
     () => { toast('Spotify connected', { icon: 'music', type: 'success' }); if (current === 'music') render('music'); else location.hash = '#/music'; },
     (e) => toast('Spotify sign-in failed', { icon: 'alert', type: 'error', detail: e.message }),
   );
+  startPanel();
   hub.start();
   startEnergy();
   startRoutines();

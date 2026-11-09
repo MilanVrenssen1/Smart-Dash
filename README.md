@@ -120,6 +120,17 @@ In PowerShell, inside the `android` folder, run `.\gradlew.bat signingReport`. C
 
 Supported now: on/off lights, dimmable lights, colour-temperature lights, colour lights and plugs. The native code is in `android/app/src/googlehome/` and the web side is in `www/js/integrations/googlehome.js`.
 
+## Wall panel (tablet)
+
+Turn a spare tablet into a dedicated control panel with **Settings → Wall panel**:
+- **Screen on:** always, or only while charging.
+- **Full screen:** the Android bars are hidden.
+- **Night clock:** a calm, dimmed clock after a few minutes without touches.
+- **Settings PIN:** guests can't change settings.
+- **Home screen:** *Use as the tablet's home screen* makes Smart Dash the launcher, so pressing Home or restarting always returns to it. To get back to Android, use **Open Android settings** in the same section.
+
+In landscape, Home switches to a two-column layout.
+
 ## Project layout
 
 ```

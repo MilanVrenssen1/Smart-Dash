@@ -4,6 +4,7 @@ import { store, guessRoomIcon } from '../store.js';
 import { integrationsListHTML, wireIntegrationList } from '../connect.js';
 import { haptic, toast, confirmDialog, promptDialog, segmented, openSheet } from '../ui.js';
 import { ACCENTS, applyTheme, installPrompt } from '../theme.js';
+import { panelSettings, settingsLocked, tryUnlock, lockNow, isNativePanel, panelStatus, setHomeApp, openSystemSettings, previewClock } from '../panel.js';
 
 const ROOM_ICONS = ['sofa', 'bed', 'baby', 'utensils', 'bath', 'monitor', 'car', 'tree', 'door', 'home', 'layers', 'heart'];
 
@@ -31,7 +32,61 @@ function hiddenHTML() {
   </section>`;
 }
 
+function lockHTML() {
+  return `<section class="pin-lock">
+    <p class="eyebrow">Wall panel</p>
+    <h1 class="title">Settings are locked</h1>
+    <p class="muted">Enter the PIN to continue.</p>
+    <div class="pin-dots" aria-live="polite"><i></i><i></i><i></i><i></i></div>
+    <div class="pin-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, '⌫'].map((k) => k === '' ? '<span></span>' : `<button class="pin-k" data-k="${k}">${k}</button>`).join('')}</div>
+  </section>`;
+}
+
+function renderLock(root) {
+  root.innerHTML = lockHTML();
+  let entry = '';
+  const dots = () => root.querySelectorAll('.pin-dots i').forEach((d, i) => d.classList.toggle('on', i < entry.length));
+  const onClick = (e) => {
+    const k = e.target.closest('[data-k]')?.dataset.k;
+    if (k == null) return;
+    haptic(5);
+    entry = k === '⌫' ? entry.slice(0, -1) : (entry + k).slice(0, 8);
+    dots();
+    if (entry.length >= 4 && tryUnlock(entry)) { root.removeEventListener('click', onClick); render(root); return; }
+    if (entry.length >= panelSettings().pin.length && entry.length >= 4) {
+      root.querySelector('.pin-dots').classList.add('shake');
+      setTimeout(() => { entry = ''; dots(); root.querySelector('.pin-dots')?.classList.remove('shake'); }, 500);
+    }
+  };
+  root.addEventListener('click', onClick);
+  return () => root.removeEventListener('click', onClick);
+}
+
+function panelHTML() {
+  const p = panelSettings();
+  const native = isNativePanel();
+  return `<section class="ctl-card" id="panel-card">
+      <div class="card-head"><h4>Wall panel</h4></div>
+      <p class="muted small panel-intro">Turn a tablet into a dedicated control panel: always on, full screen, with a calm clock when nobody is using it.</p>
+      <button class="row" data-pn="enabled">${icon('monitor')}<span>Wall panel mode</span><span class="tgl sm ${p.enabled ? 'on' : ''}"><i></i></span></button>
+      <div class="panel-opts ${p.enabled ? '' : 'off'}">
+        <div class="field"><span>Keep the screen on</span>
+          <div class="seg" id="pn-awake"><span class="seg-pill"></span><button data-seg="always">Always</button><button data-seg="charging">While charging</button><button data-seg="never">Never</button></div></div>
+        <label class="row">${icon('clock')}<span>Night clock after</span>
+          <select class="row-select" data-pn-select="clockAfter">${[[0, 'Never'], [1, '1 minute'], [2, '2 minutes'], [5, '5 minutes'], [10, '10 minutes'], [30, '30 minutes']].map(([v, l]) => `<option value="${v}" ${+p.clockAfter === v ? 'selected' : ''}>${l}</option>`).join('')}</select>${icon('chevronDown', 'chev')}</label>
+        <button class="row" data-pn="dim">${icon('moon')}<span>Dim the screen with the clock</span><span class="tgl sm ${p.dim ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-pn="fullscreen">${icon('layers')}<span>Full screen (hide Android bars)</span><span class="tgl sm ${p.fullscreen ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-a="pin">${icon('lock')}<span>PIN for Settings</span><b class="row-v">${p.pin ? 'On' : 'Off'}</b>${icon('chevronRight', 'chev')}</button>
+        <button class="row" data-a="preview-clock">${icon('eye')}<span>Show the night clock now</span>${icon('chevronRight', 'chev')}</button>
+        ${native ? `<button class="row" data-a="home-app">${icon('home')}<span>Use as the tablet’s home screen</span><b class="row-v" id="home-state">…</b>${icon('chevronRight', 'chev')}</button>
+        <button class="row" data-a="android-settings">${icon('sliders')}<span>Open Android settings</span>${icon('chevronRight', 'chev')}</button>`
+        : `<p class="meta">${icon('info')} Screen-on, full screen and home-screen options work in the Android app.</p>`}
+      </div>
+    </section>`;
+}
+
 export function render(root) {
+  if (settingsLocked()) return renderLock(root);
   const s = store.state.settings;
   root.innerHTML = `
     <header class="page-head"><div><p class="eyebrow">Make it yours</p><h1 class="title">Settings</h1></div></header>
@@ -57,6 +112,8 @@ export function render(root) {
       <button class="row" data-tg="reduceMotion">${icon('sparkles')}<span>Reduce motion</span><span class="tgl sm ${s.reduceMotion ? 'on' : ''}"><i></i></span></button>
       <button class="row" data-tg="haptics">${icon('smartphone')}<span>Haptic feedback</span><span class="tgl sm ${s.haptics ? 'on' : ''}"><i></i></span></button>
     </section>
+
+    ${panelHTML()}
 
     <section class="ctl-card">
       <div class="card-head"><h4>Rooms</h4><button class="link" data-a="add-room">${icon('plus')} Add room</button></div>
@@ -92,6 +149,18 @@ export function render(root) {
   root.querySelector('#s-unit').addEventListener('change', (e) => store.setSettings({ tempUnit: e.target.value }));
   segmented(root.querySelector('#s-theme'), s.theme, (v) => { store.setSettings({ theme: v }); applyTheme(); });
 
+  const savePanel = (patch) => store.setSettings({ panel: { ...panelSettings(), ...patch } });
+  const awakeSeg = root.querySelector('#pn-awake');
+  if (awakeSeg) segmented(awakeSeg, panelSettings().awake, (v) => savePanel({ awake: v }));
+  root.querySelector('[data-pn-select="clockAfter"]')?.addEventListener('change', (e) => savePanel({ clockAfter: +e.target.value }));
+  const refreshHome = () => panelStatus().then((st) => {
+    const el = root.querySelector('#home-state');
+    if (el) el.textContent = st.isHome ? 'On' : st.homeEnabled ? 'Choose in Android' : 'Off';
+  }).catch(() => {});
+  refreshHome();
+  const onVis = () => { if (document.visibilityState === 'visible') refreshHome(); };
+  document.addEventListener('visibilitychange', onVis);
+
   const install = root.querySelector('.install-row');
   if (installPrompt.event) install.hidden = false;
 
@@ -108,6 +177,41 @@ export function render(root) {
   });
 
   const onClick = async (e) => {
+    const pn = e.target.closest('[data-pn]');
+    if (pn) {
+      const k = pn.dataset.pn;
+      const v = !panelSettings()[k];
+      savePanel({ [k]: v });
+      pn.querySelector('.tgl').classList.toggle('on', v);
+      if (k === 'enabled') {
+        root.querySelector('.panel-opts').classList.toggle('off', !v);
+        toast(v ? 'Wall panel mode on' : 'Wall panel mode off', { icon: 'monitor', detail: v ? 'The screen stays on while charging. Tip: also set Smart Dash as the home screen.' : '' });
+      }
+      haptic(6);
+      return;
+    }
+    const pa = e.target.closest('[data-a]')?.dataset.a;
+    if (pa === 'pin') {
+      const cur = panelSettings().pin;
+      const val = await promptDialog({ title: cur ? 'Change or remove PIN' : 'Set a PIN', label: 'PIN for Settings (4–8 digits, leave empty to remove)', value: '', placeholder: '••••', confirm: 'Save' });
+      if (val == null) return;
+      if (val && !/^\d{4,8}$/.test(val)) { toast('Use 4 to 8 digits', { icon: 'alert', type: 'error' }); return; }
+      savePanel({ pin: val });
+      lockNow();
+      if (val) tryUnlock(val);
+      root.querySelector('[data-a="pin"] .row-v').textContent = val ? 'On' : 'Off';
+      toast(val ? 'PIN set — Settings will ask for it' : 'PIN removed', { icon: 'lock' });
+      return;
+    }
+    if (pa === 'preview-clock') { setTimeout(previewClock, 200); return; }
+    if (pa === 'home-app') {
+      const st = await panelStatus();
+      if (st.isHome && !(await confirmDialog({ title: 'Stop using Smart Dash as home screen?', message: 'Android will ask which home app to use instead.', confirm: 'Stop' }))) return;
+      await setHomeApp(!st.isHome);
+      if (!st.isHome) toast('Choose “Smart Dash” as the home app', { icon: 'home', detail: 'Then pressing Home or restarting the tablet always opens Smart Dash.', duration: 6000 });
+      return;
+    }
+    if (pa === 'android-settings') { openSystemSettings(); return; }
     const acc = e.target.closest('[data-acc]');
     if (acc) {
       haptic(5);
@@ -181,7 +285,7 @@ export function render(root) {
     const h = root.querySelector('#hidden-slot');
     if (h) h.innerHTML = hiddenHTML();
   });
-  return () => { root.removeEventListener('click', onClick); offInteg(); offS(); };
+  return () => { root.removeEventListener('click', onClick); offInteg(); offS(); document.removeEventListener('visibilitychange', onVis); };
 }
 
 function pickRoomIcon(r) {

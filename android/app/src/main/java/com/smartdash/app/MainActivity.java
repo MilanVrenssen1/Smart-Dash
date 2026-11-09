@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     @SuppressWarnings("unchecked")
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SamsungTvPlugin.class);
+        registerPlugin(PanelPlugin.class);
         // The Google Home plugin is only compiled in when the Home APIs SDK is installed.
         try {
             registerPlugin((Class<? extends Plugin>) Class.forName("com.smartdash.app.googlehome.GoogleHomePlugin"));

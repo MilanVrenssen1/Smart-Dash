@@ -111,7 +111,7 @@ function favouritesHTML(devs) {
   const favs = devs.filter((d) => d.favorite);
   const list = favs.length ? favs : devs.filter((d) => isActive(d)).slice(0, 6);
   if (!list.length) return '';
-  return `<section class="section">
+  return `<section class="section favs-sec">
       <div class="section-head"><h2>${favs.length ? 'Favourites' : 'Active now'}</h2></div>
       <div class="list" id="home-list">${list.map((d, i) => cardHTML(d, { index: i, variant: 'row' })).join('')}</div>
     </section>`;
@@ -120,7 +120,7 @@ function favouritesHTML(devs) {
 function activityHTML() {
   const log = store.state.log.slice(0, 4);
   if (!log.length) return '';
-  return `<section class="section"><div class="section-head"><h2>Recently</h2></div>
+  return `<section class="section act-sec"><div class="section-head"><h2>Recently</h2></div>
     <ul class="activity" id="activity">${log.map((l) => `<li><span class="act-t">${esc(l.text)}</span><time>${relTime(l.t)}</time></li>`).join('')}</ul></section>`;
 }
 
