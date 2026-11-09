@@ -125,11 +125,21 @@ class GoogleHomePlugin : Plugin() {
                 val structure = structures.first()
                 val rooms = structure.rooms().list().associate { it.id.id to it.name }
                 val list = JSArray()
+                val unsupported = JSArray()
                 for (device in structure.devices().list()) {
-                    val type = primaryType(device) ?: continue
-                    list.put(describe(device, type, rooms))
+                    val type = primaryType(device)
+                    if (type != null) {
+                        list.put(describe(device, type, rooms))
+                    } else {
+                        // Report what Google shared but Smart Dash can't control yet, for troubleshooting.
+                        val typeNames = try {
+                            device.types().first().joinToString(", ") { it.javaClass.simpleName }
+                        } catch (e: Throwable) { "unknown" }
+                        Log.i(TAG, "Unsupported device '${device.name}': $typeNames")
+                        unsupported.put(JSObject().put("name", device.name).put("types", typeNames))
+                    }
                 }
-                call.resolve(JSObject().put("home", structure.name).put("devices", list))
+                call.resolve(JSObject().put("home", structure.name).put("devices", list).put("unsupported", unsupported))
             } catch (e: HomeException) {
                 Log.e(TAG, "getDevices failed", e)
                 call.reject(e.message ?: "Google Home error", "HOME_ERROR", e)

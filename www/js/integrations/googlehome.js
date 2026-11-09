@@ -83,8 +83,10 @@ export default {
         : 'Google Home only works in the Smart Dash Android app.');
     }
     await p.connect();
-    const { devices = [], home } = await p.getDevices();
+    const { devices = [], home, unsupported = [] } = await p.getDevices();
     api.sync(devices.map(toDevice));
+    // Shown in the Google Home settings sheet so it's clear what Google shared.
+    api.saveConfig({ home: home || '', shared: devices.length, unsupported });
     if (home) api.log(`Google Home “${home}”: ${devices.length} devices`, 'home');
     await listener?.remove?.();
     listener = await p.addListener('deviceChanged', (g) => {

@@ -75,6 +75,7 @@ export function openIntegration(id) {
     <div class="status-line"></div>
     ${httpsWarn ? `<div class="note warn">${icon('alert')}<span>Your browser blocks plain <code>http://</code> devices on secure (https) sites. For local devices, open Smart Dash from your own network (e.g. <code>http://</code> on a PC) or use the Android app.</span></div>` : ''}
     ${it.help ? `<div class="note">${icon('info')}<span>${esc(it.help)}</span></div>` : ''}
+    ${cfg.enabled && cfg.home != null && id === 'googlehome' ? `<div class="note">${icon('home')}<span>Google shared <b>${cfg.shared ?? 0}</b> usable device${cfg.shared === 1 ? '' : 's'} from “${esc(cfg.home)}”.${cfg.unsupported?.length ? ` Not supported yet: ${cfg.unsupported.map((u) => `<b>${esc(u.name)}</b> <code>${esc(u.types)}</code>`).join(', ')}.` : ' Nothing was skipped — if a device is missing, Google didn’t share it with apps.'}</span></div>` : ''}
     <form class="form" autocomplete="off">
       ${it.fields.map((f) => `<label class="field"><span>${esc(f.label)}</span>
         <div class="input-wrap"><input class="input" name="${f.key}" type="${f.type === 'password' ? 'password' : 'text'}" inputmode="${f.type === 'url' ? 'url' : 'text'}" placeholder="${esc(f.placeholder || '')}" value="${esc(cfg[f.key] || '')}" ${f.required ? 'required' : ''} spellcheck="false" autocapitalize="off">
