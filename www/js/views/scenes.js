@@ -42,6 +42,7 @@ const liveActions = (sc) => sc.actions.filter((a) => hub.resolve(a.target).lengt
 function sceneTile(sc, i) {
   const n = liveActions(sc).length;
   return `<div class="scene-tile" style="--a:${sc.gradient?.[0]};--b:${sc.gradient?.[1]};--i:${i}" data-scene="${esc(sc.id)}" role="button" tabindex="0" aria-label="Run ${esc(sc.name)}">
+    <span class="st-n">${String(i + 1).padStart(2, '0')}</span>
     <span class="st-ic">${icon(sc.icon)}</span>
     <div class="st-txt"><b>${esc(sc.name)}</b><small>${n} action${n === 1 ? '' : 's'}</small></div>
     <button class="icon-btn sm st-edit" data-edit="${esc(sc.id)}" aria-label="Edit ${esc(sc.name)}">${icon('edit')}</button>
@@ -63,12 +64,12 @@ export function render(root) {
   const scenes = store.state.scenes;
   root.innerHTML = `
     <header class="page-head">
-      <div><p class="eyebrow">One tap, whole home</p><h1 class="title">Scenes</h1></div>
+      <div><p class="eyebrow">One tap, whole home</p><h1 class="title">Moods</h1></div>
       <div class="head-actions"><button class="icon-btn accent" data-act="new-scene" aria-label="New scene">${icon('plus')}</button></div>
     </header>
     <section class="scene-grid stagger">
       ${scenes.map(sceneTile).join('')}
-      <button class="scene-tile new" data-act="new-scene"><span class="st-ic">${icon('plus')}</span><div class="st-txt"><b>New scene</b><small>Capture how things are now</small></div></button>
+      <button class="scene-tile new" data-act="new-scene"><span class="st-n">+</span><span class="st-ic">${icon('plus')}</span><div class="st-txt"><b>New scene</b><small>Capture how things are now</small></div></button>
     </section>
     <section class="section">
       <div class="section-head"><h2>Routines</h2><button class="link" data-act="new-rt">${icon('plus')} Add routine</button></div>

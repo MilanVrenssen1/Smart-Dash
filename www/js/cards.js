@@ -21,7 +21,7 @@ function parts(d) {
   };
 }
 
-export function cardHTML(d, { showRoom = true, index = 0 } = {}) {
+export function cardHTML(d, { showRoom = true, index = 0, variant = 'card' } = {}) {
   const p = parts(d);
   const room = showRoom ? store.room(d.roomId)?.name : null;
   let ctl = '';
@@ -32,7 +32,7 @@ export function cardHTML(d, { showRoom = true, index = 0 } = {}) {
   } else if (p.big != null) {
     ctl = `<span class="dc-big">${esc(p.big)}</span>`;
   }
-  return `<article class="dcard t-${d.type} ${p.active ? 'on' : ''} ${p.offline ? 'offline' : ''}" data-id="${esc(d.id)}"
+  return `<article class="dcard ${variant === 'row' ? 'drow' : ''} t-${d.type} ${p.active ? 'on' : ''} ${p.offline ? 'offline' : ''}" data-id="${esc(d.id)}"
       style="--glow:${p.glow};--level:${p.level ?? 0};--i:${index}" tabindex="0" role="button" aria-label="${esc(d.name)}, ${esc(p.status)}">
     <div class="dc-top">
       <span class="dc-icon">${icon(p.icon)}</span>

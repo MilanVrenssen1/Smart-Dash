@@ -1,15 +1,19 @@
+// Home — an editorial overview: the time, a sentence about the house, moods, rooms.
+
 import { icon } from '../icons.js';
 import { esc, fmtNum, relTime } from '../util.js';
 import { store } from '../store.js';
 import { hub } from '../hub.js';
 import { cardHTML } from '../cards.js';
-import { totalWatts, todayKWh } from '../energy.js';
-import { countTo, haptic, ripple } from '../ui.js';
+import { totalWatts } from '../energy.js';
+import { haptic } from '../ui.js';
 import { openConnect } from '../connect.js';
 import { openPalette } from '../palette.js';
-import { setDeviceFilter } from './devices.js';
+import { isActive } from '../devices.js';
 
-let roomFilter = null; // null = auto (favourites if any, else all)
+const NUM = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'];
+const word = (n) => NUM[n] || String(n);
+const toggleable = (d) => ['light', 'switch', 'outlet', 'fan', 'tv'].includes(d.type);
 
 function greeting() {
   const h = new Date().getHours();
@@ -19,102 +23,111 @@ function greeting() {
   return 'Good evening';
 }
 
-function summary() {
+/** "9:44" with a small "pm" (or 24-hour time where that's the local habit). */
+function clock() {
+  const parts = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).formatToParts(new Date());
+  const main = parts.filter((p) => p.type !== 'dayPeriod').map((p) => p.value).join('').trim();
+  const period = parts.find((p) => p.type === 'dayPeriod')?.value;
+  return `${esc(main)}${period ? `<small>${esc(period.toLowerCase())}</small>` : ''}`;
+}
+
+/** The house, described in a few calm sentences. */
+function summaryHTML() {
   const devs = store.devices();
+  if (!devs.length) return '';
+  const parts = [];
   const lights = devs.filter((d) => d.type === 'light');
-  const on = lights.filter((d) => d.state.on).length;
+  if (lights.length) {
+    const on = lights.filter((d) => d.state.on).length;
+    parts.push(on ? `<em>${word(on)}</em> ${on === 1 ? 'light is' : 'lights are'} on.` : 'All lights are <em>off</em>.');
+  }
+  const th = devs.find((d) => d.type === 'thermostat');
   const temps = [
     ...devs.filter((d) => d.type === 'thermostat' && typeof d.state.current === 'number').map((d) => d.state.current),
     ...devs.filter((d) => d.type === 'sensor' && d.state.kind === 'temperature' && typeof d.state.value === 'number').map((d) => d.state.value),
   ];
-  const avg = temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
-  const th = devs.find((d) => d.type === 'thermostat');
+  if (temps.length) {
+    const avg = temps.reduce((a, b) => a + b, 0) / temps.length;
+    let t = `It is <em>${fmtNum(avg, 1)}°</em> inside`;
+    if (th && th.state.mode && th.state.mode !== 'off' && th.state.target != null) {
+      t += Math.abs(th.state.target - (th.state.current ?? avg)) > 0.3
+        ? `, ${th.state.target > (th.state.current ?? avg) ? 'warming' : 'cooling'} to <em>${fmtNum(th.state.target, 1)}°</em>` : '';
+    }
+    parts.push(t + '.');
+  }
+  const playing = devs.find((d) => d.type === 'media' && d.state.playing && d.state.title);
+  if (playing) parts.push(`<em>${esc(playing.state.title)}</em> is playing in the ${esc(store.room(playing.roomId)?.name?.toLowerCase() || playing.name)}.`);
   const locks = devs.filter((d) => d.type === 'lock');
-  const unlocked = locks.filter((d) => !d.state.locked).length;
-  const open = devs.filter((d) => d.type === 'sensor' && ['door', 'window'].includes(d.state.kind) && d.state.value).length
-    + devs.filter((d) => d.type === 'cover' && d.attrs.deviceClass === 'garage' && d.state.position > 0).length;
-  const alarms = devs.filter((d) => d.type === 'sensor' && ['smoke', 'moisture'].includes(d.state.kind) && d.state.value).length;
-  const secure = !unlocked && !open && !alarms;
-  return {
-    lights: { on, total: lights.length },
-    temp: { avg, th },
-    security: { secure, unlocked, open, alarms, any: locks.length > 0 || open > 0 },
-    watts: totalWatts(),
-    kwh: todayKWh(),
-  };
+  const open = devs.filter((d) => (d.type === 'lock' && !d.state.locked) || (d.type === 'sensor' && ['door', 'window'].includes(d.state.kind) && d.state.value));
+  const alarms = devs.filter((d) => d.type === 'sensor' && ['smoke', 'moisture'].includes(d.state.kind) && d.state.value);
+  if (alarms.length) parts.push(`<em class="warn">${esc(alarms[0].name)}</em> needs attention.`);
+  else if (open.length) parts.push(`The <em class="warn">${esc(open[0].name.toLowerCase())}</em> is open.`);
+  else if (locks.length) parts.push('The house is <em>secure</em>.');
+  const w = totalWatts();
+  if (w > 0) parts.push(`Using <em>${fmtNum(w)} W</em>.`);
+  return parts.join(' ');
 }
 
-function tilesHTML() {
-  const s = summary();
-  const sec = s.security;
-  const secText = sec.alarms ? `${sec.alarms} alert${sec.alarms > 1 ? 's' : ''}` : sec.unlocked ? `${sec.unlocked} unlocked` : sec.open ? `${sec.open} open` : 'Secured';
-  return `
-    <button class="tile t-light ${s.lights.on ? 'on' : ''}" data-go="light">
-      <span class="tile-ic">${icon('bulb')}</span>
-      <span class="tile-v"><b data-count="${s.lights.on}">${s.lights.on}</b><small>on</small></span>
-      <span class="tile-l">${s.lights.total ? `of ${s.lights.total} lights` : 'No lights yet'}</span>
-    </button>
-    <button class="tile t-temp" data-go="climate">
-      <span class="tile-ic">${icon('thermometer')}</span>
-      <span class="tile-v"><b>${s.temp.avg != null ? fmtNum(s.temp.avg, 1) : '–'}</b><small>°</small></span>
-      <span class="tile-l">${s.temp.th && s.temp.th.state.mode !== 'off' ? `Target ${fmtNum(s.temp.th.state.target, 1)}°` : 'Inside'}</span>
-    </button>
-    <button class="tile t-sec ${sec.secure ? 'ok' : 'warn'}" data-go="security">
-      <span class="tile-ic">${icon(sec.secure ? 'shield' : 'shieldAlert')}</span>
-      <span class="tile-v"><b class="sm">${secText}</b></span>
-      <span class="tile-l">Security</span>
-    </button>
-    <button class="tile t-energy" data-href="#/energy">
-      <span class="tile-ic">${icon('bolt')}</span>
-      <span class="tile-v"><b class="w-now" data-v="${Math.round(s.watts)}">${fmtNum(s.watts)}</b><small>W</small></span>
-      <span class="tile-l">${fmtNum(s.kwh, 1)} kWh today</span>
-    </button>`;
+function moodsHTML() {
+  const scenes = store.state.scenes;
+  if (!scenes.length) return '';
+  return `<section class="section moods-sec">
+      <div class="section-head"><h2>Moods</h2><a href="#/scenes" class="link">Edit</a></div>
+      <div class="moods hscroll">${scenes.map((sc, i) => `<button class="mood" data-scene="${esc(sc.id)}" style="--i:${i}">
+          <span class="mood-n">${String(i + 1).padStart(2, '0')}</span><span class="mood-name">${esc(sc.name)}</span></button>`).join('')}</div>
+    </section>`;
 }
 
-function sceneChip(sc, i) {
-  return `<button class="scene-chip" data-scene="${esc(sc.id)}" style="--a:${sc.gradient?.[0] || 'var(--accent)'};--b:${sc.gradient?.[1] || 'var(--accent-2)'};--i:${i}">
-    <span class="sc-ic">${icon(sc.icon)}</span><span>${esc(sc.name)}</span></button>`;
+function roomCard(r, devs, i) {
+  const inRoom = devs.filter((d) => d.roomId === r.id);
+  const tg = inRoom.filter(toggleable);
+  const on = tg.filter(isActive).length;
+  const temp = inRoom.find((d) => d.type === 'thermostat' && d.state.current != null)?.state.current
+    ?? inRoom.find((d) => d.type === 'sensor' && d.state.kind === 'temperature')?.state.value;
+  const line = [tg.length ? (on ? `${on} of ${tg.length} on` : 'All off') : `${inRoom.length} device${inRoom.length === 1 ? '' : 's'}`, temp != null ? `${fmtNum(temp, 1)}°` : ''].filter(Boolean).join(' · ');
+  return `<a class="room-card ${on ? 'lit' : ''}" href="#/room/${esc(r.id)}" style="--i:${i}" data-room-card="${esc(r.id)}">
+    <div class="rc-top">
+      <span class="rc-ic">${icon(r.icon)}</span>
+      ${tg.length ? `<button class="rc-power ${on ? 'on' : ''}" data-room-power="${esc(r.id)}" aria-label="${on ? 'Turn off' : 'Turn on'} ${esc(r.name)}">${icon('power')}</button>` : ''}
+    </div>
+    <div class="rc-bottom">
+      <span class="rc-count">${String(i + 1).padStart(2, '0')}</span>
+      <h3 class="rc-name">${esc(r.name)}</h3>
+      <p class="rc-line">${esc(line)}</p>
+    </div>
+  </a>`;
 }
 
-function roomsChips(devs) {
-  const favs = devs.filter((d) => d.favorite).length;
+function roomsHTML(devs) {
   const rooms = store.state.rooms.filter((r) => devs.some((d) => d.roomId === r.id));
-  const active = currentFilter(devs);
-  const chip = (id, label, ic, n) => `<button class="chip ${active === id ? 'on' : ''}" data-room="${esc(id)}">${icon(ic)}<span>${esc(label)}</span>${n != null ? `<em>${n}</em>` : ''}</button>`;
-  return [
-    favs ? chip('fav', 'Favourites', 'star', favs) : '',
-    chip('all', 'All', 'grid', devs.length),
-    ...rooms.map((r) => chip(r.id, r.name, r.icon, devs.filter((d) => d.roomId === r.id).length)),
-  ].join('');
+  if (!rooms.length) return '';
+  return `<section class="section rooms-sec">
+      <div class="section-head"><h2>Rooms</h2><a href="#/devices" class="link">All devices</a></div>
+      <div class="rooms hscroll" id="rooms">${rooms.map((r, i) => roomCard(r, devs, i)).join('')}</div>
+    </section>`;
 }
 
-function currentFilter(devs) {
-  if (roomFilter === 'fav' && !devs.some((d) => d.favorite)) return 'all';
-  if (roomFilter && roomFilter !== 'fav' && roomFilter !== 'all' && !store.room(roomFilter)) return 'all';
-  return roomFilter || (devs.some((d) => d.favorite) ? 'fav' : 'all');
-}
-
-function gridHTML(devs) {
-  const f = currentFilter(devs);
-  const roomIdx = (d) => { const i = store.state.rooms.findIndex((r) => r.id === d.roomId); return i < 0 ? 999 : i; };
-  const SENSOR_LAST = (d) => (d.type === 'sensor' ? 1 : 0);
-  const byRoom = [...devs].sort((a, b) => roomIdx(a) - roomIdx(b) || SENSOR_LAST(a) - SENSOR_LAST(b) || a.name.localeCompare(b.name));
-  const list = f === 'fav' ? byRoom.filter((d) => d.favorite) : f === 'all' ? byRoom : byRoom.filter((d) => d.roomId === f);
-  return list.map((d, i) => cardHTML(d, { showRoom: f !== 'all' ? f === 'fav' : true, index: i })).join('');
+function favouritesHTML(devs) {
+  const favs = devs.filter((d) => d.favorite);
+  const list = favs.length ? favs : devs.filter((d) => isActive(d)).slice(0, 6);
+  if (!list.length) return '';
+  return `<section class="section">
+      <div class="section-head"><h2>${favs.length ? 'Favourites' : 'Active now'}</h2></div>
+      <div class="list" id="home-list">${list.map((d, i) => cardHTML(d, { index: i, variant: 'row' })).join('')}</div>
+    </section>`;
 }
 
 function activityHTML() {
-  const log = store.state.log.slice(0, 6);
-  if (!log.length) return '<li class="muted small empty-line">Things you do will show up here.</li>';
-  return log.map((l) => `<li><span class="act-ic">${icon(l.icon)}</span><span class="act-t">${esc(l.text)}</span><time>${relTime(l.t)}</time></li>`).join('');
+  const log = store.state.log.slice(0, 4);
+  if (!log.length) return '';
+  return `<section class="section"><div class="section-head"><h2>Recently</h2></div>
+    <ul class="activity" id="activity">${log.map((l) => `<li><span class="act-t">${esc(l.text)}</span><time>${relTime(l.t)}</time></li>`).join('')}</ul></section>`;
 }
 
 function emptyHTML() {
   return `<div class="empty-hero">
-    <div class="orbit big"><span class="o-core">${icon('hub')}</span>
-      ${['bulb', 'plug', 'thermometer', 'lock', 'speaker', 'blinds'].map((n, i) => `<span class="o-sat" style="--k:${i}">${icon(n)}</span>`).join('')}</div>
-    <h2>Your home, in one place</h2>
-    <p class="muted">Connect Google Home, Sonos, Home Assistant, Philips Hue, Shelly or any HTTP device to control everything from here.</p>
+    <h2>Your home, in one place.</h2>
+    <p class="muted">Connect Google Home, Sonos, Samsung TV, Home Assistant, Philips Hue, Shelly or any HTTP device.</p>
     <div class="btn-row center"><button class="btn primary lg" data-act="add">${icon('plus')}<span>Connect devices</span></button></div>
   </div>`;
 }
@@ -124,89 +137,72 @@ export function render(root) {
   const name = store.state.settings.name;
   const date = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
   root.innerHTML = `
-    <header class="page-head">
-      <div>
-        <p class="eyebrow">${esc(date)}</p>
-        <h1 class="title">${greeting()}${name ? `, <span class="grad">${esc(name)}</span>` : ''}</h1>
-      </div>
+    <header class="masthead">
+      <span class="eyebrow">${esc(date)}</span>
       <div class="head-actions">
-        <button class="icon-btn" data-act="search" aria-label="Search (Ctrl K)">${icon('search')}</button>
-        <button class="icon-btn accent" data-act="add" aria-label="Connect devices">${icon('plus')}</button>
+        <button class="icon-btn ghost-btn" data-act="search" aria-label="Search">${icon('search')}</button>
+        <button class="icon-btn ghost-btn" data-act="add" aria-label="Connect devices">${icon('plus')}</button>
       </div>
     </header>
-    ${devs.length ? `
-    <section class="tiles stagger" id="tiles">${tilesHTML()}</section>
-    ${store.state.scenes.length ? `<section class="section">
-      <div class="section-head"><h2>Scenes</h2><a href="#/scenes" class="link">All scenes ${icon('chevronRight')}</a></div>
-      <div class="scene-strip hscroll">${store.state.scenes.map(sceneChip).join('')}</div>
-    </section>` : ''}
-    <section class="section">
-      <div class="section-head"><h2>Devices</h2><a href="#/devices" class="link">Manage ${icon('chevronRight')}</a></div>
-      <div class="chips hscroll" id="room-chips">${roomsChips(devs)}</div>
-      <div class="grid" id="home-grid">${gridHTML(devs)}</div>
+    <section class="hero">
+      <div class="hero-time" id="hero-time">${clock()}</div>
+      <h1 class="hero-greet">${greeting()}${name ? `, <span class="grad">${esc(name)}</span>` : ''}.</h1>
+      <p class="hero-summary" id="hero-summary">${summaryHTML()}</p>
     </section>
-    <section class="section">
-      <div class="section-head"><h2>Activity</h2></div>
-      <ul class="activity" id="activity">${activityHTML()}</ul>
-    </section>` : emptyHTML()}`;
+    ${devs.length ? `${moodsHTML()}${roomsHTML(devs)}${favouritesHTML(devs)}${activityHTML()}` : emptyHTML()}`;
 
   const onClick = (e) => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'search') openPalette();
     if (act === 'add') openConnect();
-    const chip = e.target.closest('[data-room]');
-    if (chip) {
-      roomFilter = chip.dataset.room;
-      haptic(5);
-      root.querySelectorAll('#room-chips .chip').forEach((c) => c.classList.toggle('on', c === chip));
-      const g = root.querySelector('#home-grid');
-      g.innerHTML = gridHTML(store.devices());
-      g.classList.remove('reflow');
-      void g.offsetWidth;
-      g.classList.add('reflow');
-    }
-    const sc = e.target.closest('[data-scene]');
-    if (sc) {
-      ripple(e, sc);
+    const mood = e.target.closest('[data-scene]');
+    if (mood) {
       haptic([8, 30, 8]);
-      sc.classList.add('fired');
-      setTimeout(() => sc.classList.remove('fired'), 900);
-      hub.runScene(sc.dataset.scene);
+      root.querySelectorAll('.mood').forEach((m) => m.classList.toggle('active', m === mood));
+      mood.classList.remove('fired'); void mood.offsetWidth; mood.classList.add('fired');
+      hub.runScene(mood.dataset.scene);
     }
-    const tile = e.target.closest('.tile');
-    if (tile) {
-      if (tile.dataset.href) location.hash = tile.dataset.href;
-      else { setDeviceFilter(tile.dataset.go); location.hash = '#/devices'; }
+    const power = e.target.closest('[data-room-power]');
+    if (power) {
+      e.preventDefault();
+      e.stopPropagation();
+      haptic(10);
+      const rid = power.dataset.roomPower;
+      const tg = store.devices().filter((d) => d.roomId === rid && toggleable(d));
+      const turnOn = !tg.some(isActive);
+      hub.setAll(tg.map((d) => d.id), () => ({ on: turnOn }), `${store.room(rid)?.name}: ${turnOn ? 'on' : 'off'}`);
     }
   };
   root.addEventListener('click', onClick);
 
-  const refreshTiles = () => {
-    const t = root.querySelector('#tiles');
-    if (!t) return;
-    const prevW = t.querySelector('.w-now');
-    const from = prevW ? +prevW.dataset.v : 0;
-    t.classList.remove('stagger'); // entrance animation only on first paint
-    t.innerHTML = tilesHTML();
-    const w = t.querySelector('.w-now');
-    if (w) {
-      const to = +w.dataset.v;
-      w.dataset.v = from;
-      countTo(w, to);
-    }
+  // Keep the sentence, the clock and the room cards current without re-rendering the page.
+  let queued = false;
+  const refresh = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      const s = root.querySelector('#hero-summary');
+      if (s) s.innerHTML = summaryHTML();
+      const rooms = root.querySelector('#rooms');
+      if (rooms) {
+        const all = store.devices();
+        rooms.querySelectorAll('[data-room-card]').forEach((el, i) => {
+          const r = store.room(el.dataset.roomCard);
+          if (!r) return;
+          const tmp = document.createElement('div');
+          tmp.innerHTML = roomCard(r, all, i);
+          const fresh = tmp.firstElementChild;
+          el.className = fresh.className;
+          el.querySelector('.rc-line').textContent = fresh.querySelector('.rc-line').textContent;
+          const p = el.querySelector('.rc-power');
+          if (p) p.classList.toggle('on', fresh.querySelector('.rc-power')?.classList.contains('on'));
+        });
+      }
+    });
   };
-  let tilesQueued = false;
-  const queueTiles = () => {
-    if (tilesQueued) return;
-    tilesQueued = true;
-    requestAnimationFrame(() => { tilesQueued = false; refreshTiles(); });
-  };
-  const offs = [
-    store.on('device', queueTiles),
-    store.on('energy', queueTiles),
-    store.on('log', () => { const a = root.querySelector('#activity'); if (a) a.innerHTML = activityHTML(); }),
-  ];
-  const timer = setInterval(() => { const a = root.querySelector('#activity'); if (a) a.innerHTML = activityHTML(); }, 30000);
+  const offs = [store.on('device', refresh), store.on('energy', refresh)];
+  const timer = setInterval(() => { const t = root.querySelector('#hero-time'); if (t) t.innerHTML = clock(); }, 10000);
   return () => {
     root.removeEventListener('click', onClick);
     offs.forEach((f) => f());

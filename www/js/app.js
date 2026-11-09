@@ -15,6 +15,7 @@ import * as Home from './views/home.js';
 import * as Devices from './views/devices.js';
 import * as Scenes from './views/scenes.js';
 import * as Music from './views/music.js';
+import * as Room from './views/room.js';
 import { initSpotify } from './spotify.js';
 import * as Energy from './views/energy.js';
 import * as Settings from './views/settings.js';
@@ -23,17 +24,20 @@ const ROUTES = {
   home: { view: Home, label: 'Home', icon: 'home', rerenderOn: ['structure', 'scenes', 'settings'] },
   devices: { view: Devices, label: 'Devices', icon: 'grid', rerenderOn: ['structure'] },
   music: { view: Music, label: 'Music', icon: 'music', rerenderOn: [] },
-  scenes: { view: Scenes, label: 'Scenes', icon: 'sparkles', rerenderOn: ['scenes', 'routines'] },
+  scenes: { view: Scenes, label: 'Moods', icon: 'sparkles', rerenderOn: ['scenes', 'routines'] },
   energy: { view: Energy, label: 'Energy', icon: 'bolt', rerenderOn: ['settings'] },
+  room: { view: Room, label: 'Room', icon: 'home', rerenderOn: ['structure'], hidden: true, navAs: 'home' },
   settings: { view: Settings, label: 'Settings', icon: 'sliders', rerenderOn: [] },
 };
-const ORDER = Object.keys(ROUTES);
+const ORDER = Object.keys(ROUTES).filter((k) => !ROUTES[k].hidden);
+let currentParam = null;
 
 let current = null;
 let cleanup = null;
 
 const routeFromHash = () => {
-  const r = location.hash.replace(/^#\/?/, '').split('?')[0];
+  const [r, param] = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
+  currentParam = param ? decodeURIComponent(param) : null;
   return ROUTES[r] ? r : 'home';
 };
 
@@ -64,6 +68,7 @@ function updateSideStatus() {
 }
 
 function setActiveNav(route) {
+  route = ROUTES[route]?.navAs || route;
   $$('[data-route]').forEach((a) => {
     const on = a.dataset.route === route;
     a.classList.toggle('active', on);
@@ -80,19 +85,20 @@ function setActiveNav(route) {
 
 function render(route, { soft = false } = {}) {
   const view = $('#view');
-  const prevIndex = current ? ORDER.indexOf(current) : -1;
+  const prevIndex = current ? ORDER.indexOf(ROUTES[current].navAs || current) : -1;
   cleanup?.();
   cleanup = null;
   const scroll = soft ? window.scrollY : 0;
   current = route;
-  cleanup = ROUTES[route].view.render(view) || null;
+  cleanup = ROUTES[route].view.render(view, currentParam) || null;
   setActiveNav(route);
   view.classList.toggle('soft', soft);
   if (!soft) {
     window.scrollTo({ top: 0 });
     view.classList.remove('enter', 'from-left', 'from-right');
     void view.offsetWidth;
-    const dir = prevIndex < 0 ? '' : ORDER.indexOf(route) > prevIndex ? 'from-right' : 'from-left';
+    const idx = route === 'room' ? ORDER.length : ORDER.indexOf(route);
+    const dir = prevIndex < 0 ? '' : idx > prevIndex ? 'from-right' : idx < prevIndex ? 'from-left' : '';
     view.classList.add('enter');
     if (dir) view.classList.add(dir);
     document.title = route === 'home' ? 'Smart Dash' : `${ROUTES[route].label} · Smart Dash`;

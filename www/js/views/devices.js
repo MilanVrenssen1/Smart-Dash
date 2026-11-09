@@ -36,11 +36,10 @@ function bodyHTML() {
     const anyOn = tg.some((d) => isActive(d));
     return `<section class="room-group" data-room="${esc(room.id)}">
       <div class="room-head">
-        <span class="room-ic">${icon(room.icon)}</span>
-        <div><h2>${esc(room.name)}</h2><p class="muted small">${devs.length} device${devs.length > 1 ? 's' : ''}${tg.length ? ` · ${tg.filter(isActive).length} on` : ''}</p></div>
+        <div><h2>${room.id ? `<a href="#/room/${esc(room.id)}">${esc(room.name)}</a>` : esc(room.name)}</h2><p class="muted small">${devs.length} device${devs.length > 1 ? 's' : ''}${tg.length ? ` · ${tg.filter(isActive).length} on` : ''}</p></div>
         ${tg.length ? `<button class="chip sm room-all ${anyOn ? 'on' : ''}" data-all="${esc(room.id)}">${icon('power')}<span>${anyOn ? 'All off' : 'All on'}</span></button>` : ''}
       </div>
-      <div class="grid">${devs.map((d) => cardHTML(d, { showRoom: false, index: i++ })).join('')}</div>
+      <div class="list">${devs.map((d) => cardHTML(d, { showRoom: false, index: i++, variant: 'row' })).join('')}</div>
     </section>`;
   }).join('');
 }
