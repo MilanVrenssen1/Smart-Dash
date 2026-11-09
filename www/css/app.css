@@ -1680,3 +1680,10 @@ html, body { background-color: var(--bg); }
   #view[data-page='home'] .room-card { aspect-ratio: auto; height: clamp(170px, calc((100vh - 330px) / 2), 300px); padding: 22px 24px; }
   #view[data-page='home'] .rc-name { font-size: 32px; margin: 4px 0 6px; }
 }
+.tv-app-ic { position: relative; overflow: hidden; }
+.tv-app-ic em { font-style: normal; }
+.tv-app-ic.has-logo { background: #f4f1eb; box-shadow: none; }
+.tv-app-ic.has-logo em { visibility: hidden; }
+.tv-app-ic.has-logo img { position: absolute; inset: 22%; width: 56%; height: 56%; object-fit: contain; }
+.tv-icon-info { margin-top: 12px; }
+.tv-icon-info:empty { display: none; }

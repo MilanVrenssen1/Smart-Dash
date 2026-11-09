@@ -18,6 +18,27 @@ const ICON_KEY = 'smartdash:tvicons';
 let iconCache = (() => { try { return JSON.parse(localStorage.getItem(ICON_KEY)) || {}; } catch { return {}; } })();
 export const tvIcon = (appId) => iconCache[appId] || null;
 
+// Logos for well-known apps, used when the TV doesn't hand out its own icons.
+const BRAND_DOMAINS = {
+  netflix: 'netflix.com', youtube: 'youtube.com', youtubemusic: 'music.youtube.com', youtubekids: 'youtubekids.com',
+  primevideo: 'primevideo.com', amazonprimevideo: 'primevideo.com', disney: 'disneyplus.com', disneyplus: 'disneyplus.com',
+  spotify: 'spotify.com', appletv: 'tv.apple.com', applemusic: 'music.apple.com', videoland: 'videoland.com',
+  npostart: 'npo.nl', npoplus: 'npo.nl', max: 'max.com', hbomax: 'max.com', viaplay: 'viaplay.com', skyshowtime: 'skyshowtime.com',
+  plex: 'plex.tv', twitch: 'twitch.tv', deezer: 'deezer.com', tidal: 'tidal.com', ziggogo: 'ziggo.nl', kpntv: 'kpn.com',
+  pathethuis: 'pathe-thuis.nl', kijk: 'kijk.nl', dazn: 'dazn.com', espn: 'espn.com', paramountplus: 'paramountplus.com',
+  rakutentv: 'rakuten.tv', pluto: 'pluto.tv', plutotv: 'pluto.tv', samsungtvplus: 'samsungtvplus.com', internet: 'samsung.com',
+  googleplaymovies: 'play.google.com', vimeo: 'vimeo.com', facebookwatch: 'facebook.com', ted: 'ted.com', nlziet: 'nlziet.nl',
+};
+const norm = (n) => String(n || '').toLowerCase().replace(/\+/g, 'plus').replace(/[^a-z0-9]/g, '');
+export function brandIcon(name) {
+  const key = norm(name);
+  const domain = BRAND_DOMAINS[key] || BRAND_DOMAINS[key.replace(/^(the|samsung)/, '')];
+  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null;
+}
+
+/** Why icons are (not) coming from the TV — shown under the app grid. */
+export const iconInfo = { withPath: 0, fetched: 0, failed: 0, lastError: '', total: 0 };
+
 function shrink(dataUrl, size = 128) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -36,17 +57,24 @@ function shrink(dataUrl, size = 128) {
 
 async function loadIcons(host, apps) {
   let added = 0;
+  iconInfo.total = apps.length;
+  iconInfo.withPath = apps.filter((a) => a.icon).length;
+  iconInfo.fetched = apps.filter((a) => iconCache[a.appId]).length;
+  iconInfo.failed = 0;
   for (const a of apps) {
     if (iconCache[a.appId] || !a.icon) continue;
     try {
+      if (!plugin().getAppIcon) throw new Error('This app build can’t fetch TV icons yet — rebuild in Android Studio.');
       const { data } = await plugin().getAppIcon({ host, iconPath: a.icon });
-      const small = await shrink(`data:image/png;base64,${data}`);
-      if (small) { iconCache[a.appId] = small; added++; }
-    } catch { /* TV didn't answer for this one */ }
+      const raw = String(data || '');
+      const mime = raw.startsWith('/9j/') ? 'image/jpeg' : 'image/png';
+      const small = await shrink(raw.startsWith('data:') ? raw : `data:${mime};base64,${raw}`);
+      if (small) { iconCache[a.appId] = small; added++; iconInfo.fetched++; } else { iconInfo.failed++; iconInfo.lastError = 'icon image could not be read'; }
+    } catch (e) { iconInfo.failed++; iconInfo.lastError = e?.message || 'no answer'; }
   }
+  api.upsert({ nid: host, attrs: { iconsVersion: Date.now() } });
   if (added) {
     try { localStorage.setItem(ICON_KEY, JSON.stringify(iconCache)); } catch { /* storage full */ }
-    api.upsert({ nid: host, attrs: { iconsVersion: Date.now() } });
   }
 }
 

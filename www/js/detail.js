@@ -8,7 +8,7 @@ import { INTEGRATIONS } from './integrations/index.js';
 import { typeDef, statusText, glowColor, lightColor, sensorKind, sensorText, MODE_LABEL, devIcon } from './devices.js';
 import { openSheet, haptic, segmented, promptDialog, confirmDialog, toast } from './ui.js';
 import { sensorHistory } from './energy.js';
-import { COMMON_APPS, tvIcon } from './integrations/samsungtv.js';
+import { COMMON_APPS, tvIcon, brandIcon, iconInfo } from './integrations/samsungtv.js';
 
 const SWATCHES = ['#ff5f5f', '#ff9f43', '#ffd166', '#a3e635', '#34d399', '#22d3ee', '#3b82f6', '#6366f1', '#7c5cff', '#c084fc', '#f472b6', '#ffe4c4'];
 
@@ -686,6 +686,7 @@ function buildTv(d, root) {
     <div class="ctl-card">
       <div class="card-head"><h4>Apps</h4><button class="link" data-a="reload-apps">${icon('refresh')} Refresh</button></div>
       <div class="tv-apps"></div>
+      <p class="muted small tv-icon-info"></p>
     </div>`;
 
   root.querySelector('[data-a="power"]').addEventListener('click', () => {
@@ -728,7 +729,17 @@ function buildTv(d, root) {
       const pinned = COMMON_APPS.map((c) => c.name);
       const sorted = [...apps].sort((a, b) => (pinned.indexOf(a.name) + 1 || 99) - (pinned.indexOf(b.name) + 1 || 99) || a.name.localeCompare(b.name));
       grid.innerHTML = sorted.map((a, i) => `<button class="tv-app" data-app="${esc(a.appId)}" data-name="${esc(a.name)}" style="--c:${appColor(a.name)};--i:${i}">
-        ${tvIcon(a.appId) ? `<span class="tv-app-ic has-img"><img src="${tvIcon(a.appId)}" alt=""></span>` : `<span class="tv-app-ic">${esc(a.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 2) || '?')}</span>`}<span class="tv-app-n">${esc(a.name)}</span></button>`).join('');
+        ${tvIcon(a.appId) ? `<span class="tv-app-ic has-img"><img src="${tvIcon(a.appId)}" alt=""></span>`
+          : `<span class="tv-app-ic ${brandIcon(a.name) ? 'has-logo' : ''}"><em>${esc(a.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 2) || '?')}</em>${brandIcon(a.name) ? `<img src="${brandIcon(a.name)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-logo');this.remove()">` : ''}</span>`}<span class="tv-app-n">${esc(a.name)}</span></button>`).join('');
+      const info = root.querySelector('.tv-icon-info');
+      if (info) {
+        const fromTv = apps.filter((a) => tvIcon(a.appId)).length;
+        info.textContent = !d.attrs.apps?.length ? 'The TV hasn’t shared its app list yet — showing popular apps. Tap Refresh while the TV is on.'
+          : fromTv === apps.length ? ''
+          : iconInfo.withPath === 0 && iconInfo.total ? 'Your TV doesn’t share app icons, so logos come from the web where known.'
+          : iconInfo.failed ? `Icons from the TV: ${fromTv} of ${apps.length}. Last problem: ${iconInfo.lastError}.`
+          : '';
+      }
     }
   };
   update(d);
