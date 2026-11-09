@@ -17,7 +17,7 @@ function parts(d) {
     glow: glowColor(d),
     level: def.level ? def.level(s) : null,
     big: def.big ? def.big(s) : null,
-    actionIcon: def.actionIcon ? def.actionIcon(s) : null,
+    actionIcon: def.actionIcon ? def.actionIcon(s, d.attrs || {}) : null,
   };
 }
 

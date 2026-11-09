@@ -527,6 +527,7 @@ function buildFan(d, root) {
 
 function buildMedia(d, root) {
   const id = d.id;
+  if (d.attrs.volumeOnly) return buildSpeakerVolume(d, root);
   root.innerHTML = `
     <div class="media-card">
       <div class="art"><div class="art-img"></div><div class="eq"><i></i><i></i><i></i><i></i><i></i></div></div>
@@ -576,6 +577,26 @@ function buildMedia(d, root) {
     }
   };
   update(d);
+  return { update };
+}
+
+/** Speakers where only the volume can be controlled (e.g. Google Nest via the Home APIs). */
+function buildSpeakerVolume(d, root) {
+  const id = d.id;
+  root.innerHTML = `
+    <div class="ctl-hero light-hero">
+      <div class="hero-slot"></div>
+      <div class="hero-side"><div class="fan-spin">${icon('speaker')}</div></div>
+    </div>
+    <div class="note">${icon('info')}<span>Google lets apps change the volume of Nest speakers. To play music on it, use the <b>Music</b> tab and pick this speaker under “Play on”.</span></div>
+    <div class="ctl-row center"><a class="pill-btn" href="#/music">${icon('music')}<span>Open Music</span></a></div>`;
+  const vs = vslider({
+    value: d.state.volume ?? 0, label: 'Volume', iconName: 'volume',
+    onInput: (v) => hub.setThrottled(id, { volume: v }),
+    onChange: (v) => hub.setThrottled(id, { volume: v }, { final: true }),
+  });
+  root.querySelector('.hero-slot').appendChild(vs.el);
+  const update = (d) => vs.set(d.state.volume ?? 0);
   return { update };
 }
 

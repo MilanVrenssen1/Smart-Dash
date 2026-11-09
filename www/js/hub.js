@@ -157,7 +157,7 @@ export const hub = {
       this.command(id, def.command(d.state));
       return true;
     }
-    const patch = def.quick?.(d.state);
+    const patch = def.quick?.(d.state, d.attrs || {});
     if (!patch) return null;
     this.set(id, patch);
     return true;

@@ -24,6 +24,17 @@ function hexToHs(hex) {
 }
 
 function toDevice(g) {
+  if (g.kind === 'speaker') {
+    return {
+      nid: g.id,
+      name: g.name || 'Google speaker',
+      type: 'media',
+      roomId: g.room ? api.ensureRoom(g.room) : undefined,
+      // Google's Home APIs only expose volume for its speakers — music goes through the Music tab.
+      attrs: { kind: 'speaker', icon: 'speaker', volumeOnly: true, available: g.online !== false },
+      state: { on: g.online !== false, playing: false, volume: g.volume ?? null },
+    };
+  }
   const mode = String(g.colorMode || '');
   let color = null;
   let colorTemp = null;
@@ -58,7 +69,7 @@ export default {
   name: 'Google Home',
   icon: 'home',
   color: '#4285f4',
-  tagline: 'Your Matter lights & plugs from Google Home',
+  tagline: 'Matter lights, plugs & Nest speakers from Google Home',
   description: 'Sign in with Google and pick your home — every supported light and plug in your Google Home appears here with its room, and stays in sync both ways.',
   help: 'Needs the Smart Dash Android app built with the Google Home SDK, and a Google hub in your home (Nest Mini, Nest Audio, Nest Hub, Google TV Streamer…). See the README section “Google Home” for the one-time setup.',
   fields: [],
@@ -92,6 +103,11 @@ export default {
     const p = plugin();
     if (!p) throw new Error('Google Home is not available in this build');
     const req = { id: d.nid };
+    if (d.attrs.volumeOnly) {
+      if (patch.volume == null) return;
+      await p.setState({ id: d.nid, volume: patch.volume });
+      return;
+    }
     if ('on' in patch) req.on = !!patch.on;
     if (patch.brightness != null) {
       if (patch.brightness <= 0) req.on = false;

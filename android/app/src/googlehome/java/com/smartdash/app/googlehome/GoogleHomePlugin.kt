@@ -27,6 +27,7 @@ import com.google.home.matter.standard.LevelControlTrait
 import com.google.home.matter.standard.OnOff
 import com.google.home.matter.standard.OnOffLightDevice
 import com.google.home.matter.standard.OnOffPluginUnitDevice
+import com.google.home.matter.standard.SpeakerDevice
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +70,7 @@ class GoogleHomePlugin : Plugin() {
                 ExtendedColorLightDevice,
                 OnOffPluginUnitDevice,
                 DimmablePlugInUnitDevice,
+                SpeakerDevice,
             ),
         )
         home = Home.getClient(
@@ -197,6 +199,16 @@ class GoogleHomePlugin : Plugin() {
                 if (on != null && onOff != null) {
                     if (on) onOff.on() else onOff.off()
                 }
+                // Speakers: volume is the LevelControl level (0-254).
+                val volume = call.getDouble("volume")
+                if (volume != null && level != null) {
+                    level.moveToLevel(
+                        level = (volume.coerceIn(0.0, 100.0) * 254 / 100).roundToInt().toUByte(),
+                        transitionTime = null,
+                        optionsMask = LevelControlTrait.OptionsBitmap(),
+                        optionsOverride = LevelControlTrait.OptionsBitmap(),
+                    )
+                }
                 val mireds = call.getInt("mireds")
                 if (mireds != null && color != null) {
                     color.moveToColorTemperature(
@@ -238,6 +250,7 @@ class GoogleHomePlugin : Plugin() {
         d.has(OnOffLightDevice) -> d.type(OnOffLightDevice).first()
         d.has(DimmablePlugInUnitDevice) -> d.type(DimmablePlugInUnitDevice).first()
         d.has(OnOffPluginUnitDevice) -> d.type(OnOffPluginUnitDevice).first()
+        d.has(SpeakerDevice) -> d.type(SpeakerDevice).first()
         else -> null
     }
 
@@ -248,11 +261,13 @@ class GoogleHomePlugin : Plugin() {
         d.has(OnOffLightDevice) -> d.type(OnOffLightDevice)
         d.has(DimmablePlugInUnitDevice) -> d.type(DimmablePlugInUnitDevice)
         d.has(OnOffPluginUnitDevice) -> d.type(OnOffPluginUnitDevice)
+        d.has(SpeakerDevice) -> d.type(SpeakerDevice)
         else -> null
     }
 
     private fun describe(d: HomeDevice, type: DeviceType, rooms: Map<String, String>): JSObject {
         val isPlug = type is OnOffPluginUnitDevice || type is DimmablePlugInUnitDevice
+        val isSpeaker = type is SpeakerDevice
         val onOff = type.trait(OnOff)
         val level = type.trait(LevelControl)
         val color = type.trait(ColorControl)
@@ -260,11 +275,14 @@ class GoogleHomePlugin : Plugin() {
         o.put("id", d.id.id)
         o.put("name", d.name)
         o.put("room", d.roomId?.let { rooms[it.id] })
-        o.put("kind", if (isPlug) "outlet" else "light")
+        o.put("kind", if (isSpeaker) "speaker" else if (isPlug) "outlet" else "light")
         o.put("online", type.metadata.sourceConnectivity.connectivityState.name != "OFFLINE")
         o.put("on", onOff?.onOff ?: false)
         o.put("dimmable", level != null && type !is OnOffLightDevice && type !is OnOffPluginUnitDevice)
-        level?.currentLevel?.let { o.put("brightness", (it.toInt() * 100.0 / 254).roundToInt().coerceIn(1, 100)) }
+        level?.currentLevel?.let {
+            val pct = (it.toInt() * 100.0 / 254).roundToInt().coerceIn(0, 100)
+            o.put(if (isSpeaker) "volume" else "brightness", if (isSpeaker) pct else pct.coerceAtLeast(1))
+        }
         o.put("supportsTemp", type is ColorTemperatureLightDevice || type is ExtendedColorLightDevice)
         o.put("supportsColor", type is ExtendedColorLightDevice)
         if (color != null) {

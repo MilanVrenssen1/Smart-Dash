@@ -112,14 +112,15 @@ export const TYPES = {
   media: {
     label: 'Media', plural: 'Media', icon: (s, a) => a.icon || (a.kind === 'tv' ? 'tv' : 'speaker'), toggle: false, action: true,
     active: (s) => !!s.playing,
-    status: (s) => {
+    status: (s, a) => {
+      if (a.volumeOnly) return s.volume != null ? `Volume ${Math.round(s.volume)}%` : 'Speaker';
       if (s.on === false) return 'Off';
       if (s.playing && s.title) return s.title + (s.artist ? ` · ${s.artist}` : '');
       return s.playing ? 'Playing' : 'Paused';
     },
     glow: () => '#f472b6',
-    actionIcon: (s) => (s.playing ? 'pause' : 'play'),
-    quick: (s) => ({ playing: !s.playing, on: true }),
+    actionIcon: (s, a) => (a?.volumeOnly ? 'volume' : s.playing ? 'pause' : 'play'),
+    quick: (s, a) => (a?.volumeOnly ? null : { playing: !s.playing, on: true }),
     watts: (s, a) => (s.on === false ? 0.5 : s.playing ? a.watts || (a.kind === 'tv' ? 95 : 12) : 4),
   },
   tv: {
