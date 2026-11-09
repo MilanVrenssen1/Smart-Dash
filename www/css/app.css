@@ -1741,3 +1741,6 @@ html, body { background-color: var(--bg); }
 .db-debug { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .db-debug summary { cursor: pointer; }
 .db-debug code { display: block; margin-top: 6px; padding: 8px 10px; white-space: pre-wrap; word-break: break-all; font-size: 11px; }
+.db-media.small { display: grid; place-items: center; overflow: hidden; }
+.db-media.small::before { content: ''; position: absolute; inset: -30px; background: var(--snap) center / cover; filter: blur(26px) saturate(0.8) brightness(0.55); transform: scale(1.1); }
+.db-media.small img { position: relative; width: auto; height: 78%; max-width: 70%; aspect-ratio: auto; object-fit: contain; border-radius: 14px; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.8); border: 1px solid rgba(255, 255, 255, 0.12); image-rendering: auto; }

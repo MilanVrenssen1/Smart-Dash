@@ -59,7 +59,8 @@ public class EufyNotificationListener extends NotificationListenerService {
 
             String[] source = { "none" };
             Bitmap pic = findPicture(n, ex, source);
-            String debug = "picture: " + source[0] + " · keys: " + android.text.TextUtils.join(",", ex.keySet())
+            String size = pic != null ? " " + pic.getWidth() + "x" + pic.getHeight() : "";
+            String debug = "picture: " + source[0] + size + " · keys: " + android.text.TextUtils.join(",", ex.keySet())
                 + " · custom layout: " + (n.bigContentView != null || n.contentView != null ? "yes" : "no")
                 + " · style: " + ex.getString(Notification.EXTRA_TEMPLATE, "-");
 
@@ -115,8 +116,10 @@ public class EufyNotificationListener extends NotificationListenerService {
                 if (big(b)) { source[0] = "extra:" + k; return b; }
             }
         }
+        // Android shrinks notification images ("android.reduced.images"), so Eufy's snapshot
+        // often survives only as the small large-icon thumbnail. Use it if it isn't tiny.
         b = n.getLargeIcon() != null ? toBitmap(n.getLargeIcon().loadDrawable(this)) : bitmapFrom(ex.get(Notification.EXTRA_LARGE_ICON));
-        if (big(b)) { source[0] = "largeIcon"; return b; }
+        if (b != null && b.getWidth() >= 40 && b.getHeight() >= 40) { source[0] = big(b) ? "largeIcon" : "largeIcon(small)"; return b; }
         return null;
     }
 

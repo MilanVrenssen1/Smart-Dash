@@ -102,6 +102,18 @@ export function showDoorbell(ev, kind = classify(ev)) {
       <span class="db-timer"><i></i></span>
     </div>`;
   document.body.appendChild(el);
+  // Android shrinks notification images; show small snapshots sharp on a blurred backdrop instead of stretched.
+  const im = el.querySelector('.db-media img');
+  if (im) {
+    const fit = () => {
+      if (im.naturalWidth && im.naturalWidth < 360) {
+        const media = el.querySelector('.db-media');
+        media.classList.add('small');
+        media.style.setProperty('--snap', `url("${ev.image}")`);
+      }
+    };
+    if (im.complete) fit(); else im.addEventListener('load', fit, { once: true });
+  }
   const ttl = kind === 'ring' ? 60000 : 25000;
   el.style.setProperty('--ttl', `${ttl}ms`);
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
