@@ -7,6 +7,14 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Parcelable;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.RemoteViews;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
@@ -30,8 +38,15 @@ public class EufyNotificationListener extends NotificationListenerService {
         return p.equals("com.oceanwing.battery.cam") || p.contains("oceanwing") || p.contains("eufy");
     }
 
+    private final Handler main = new Handler(Looper.getMainLooper());
+
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
+        handle(sbn, 0);
+    }
+
+    /** Reads a Eufy notification. If it has no picture yet, look again shortly (Eufy often adds it later). */
+    private void handle(StatusBarNotification sbn, int attempt) {
         try {
             if (!isEufy(sbn.getPackageName())) return;
             Notification n = sbn.getNotification();
@@ -42,25 +57,100 @@ public class EufyNotificationListener extends NotificationListenerService {
             if (text == null) text = ex.getCharSequence(Notification.EXTRA_TEXT);
             CharSequence sub = ex.getCharSequence(Notification.EXTRA_SUB_TEXT);
 
-            Bitmap pic = null;
-            Object p = ex.get(Notification.EXTRA_PICTURE);
-            if (p instanceof Bitmap) pic = (Bitmap) p;
-            if (pic == null && Build.VERSION.SDK_INT >= 31) {
-                Icon ic = ex.getParcelable(Notification.EXTRA_PICTURE_ICON);
-                if (ic != null) pic = toBitmap(ic.loadDrawable(this));
-            }
-            if (pic == null && n.getLargeIcon() != null) pic = toBitmap(n.getLargeIcon().loadDrawable(this));
+            String[] source = { "none" };
+            Bitmap pic = findPicture(n, ex, source);
+            String debug = "picture: " + source[0] + " · keys: " + android.text.TextUtils.join(",", ex.keySet())
+                + " · custom layout: " + (n.bigContentView != null || n.contentView != null ? "yes" : "no")
+                + " · style: " + ex.getString(Notification.EXTRA_TEMPLATE, "-");
 
-            DoorbellBridge.deliver(
-                sbn.getKey(),
-                title != null ? title.toString() : "",
-                text != null ? text.toString() : "",
-                sub != null ? sub.toString() : "",
-                pic != null ? encode(pic) : null,
-                sbn.getPostTime());
+            if (pic == null && attempt < 2) {
+                // Deliver the text now; check again for a picture in a moment.
+                if (attempt == 0) DoorbellBridge.deliver(sbn.getKey(), str(title), str(text), str(sub), null, sbn.getPostTime(), debug);
+                String key = sbn.getKey();
+                main.postDelayed(() -> recheck(key, attempt + 1), attempt == 0 ? 2500 : 6000);
+                return;
+            }
+            if (pic == null && attempt > 0) {
+                DoorbellBridge.debug(debug);
+                return;
+            }
+            DoorbellBridge.deliver(sbn.getKey(), str(title), str(text), str(sub), pic != null ? encode(pic) : null, sbn.getPostTime(), debug);
         } catch (Throwable t) {
             Log.w(TAG, "Couldn't read Eufy notification", t);
+            DoorbellBridge.debug("error: " + t.getClass().getSimpleName() + " " + t.getMessage());
         }
+    }
+
+    private void recheck(String key, int attempt) {
+        try {
+            StatusBarNotification[] list = getActiveNotifications(new String[]{ key });
+            if (list != null && list.length > 0) handle(list[0], attempt);
+        } catch (Throwable t) {
+            Log.w(TAG, "recheck failed", t);
+        }
+    }
+
+    private static String str(CharSequence c) { return c != null ? c.toString() : ""; }
+
+    /** Looks for the snapshot everywhere apps tend to put it. */
+    @SuppressWarnings("deprecation")
+    private Bitmap findPicture(Notification n, Bundle ex, String[] source) {
+        Bitmap b = bitmapFrom(ex.get(Notification.EXTRA_PICTURE));
+        if (big(b)) { source[0] = "bigPicture"; return b; }
+        if (Build.VERSION.SDK_INT >= 31) {
+            b = bitmapFrom(ex.get(Notification.EXTRA_PICTURE_ICON));
+            if (big(b)) { source[0] = "bigPictureIcon"; return b; }
+        }
+        b = bitmapFrom(ex.get(Notification.EXTRA_LARGE_ICON_BIG));
+        if (big(b)) { source[0] = "largeIconBig"; return b; }
+        for (RemoteViews rv : new RemoteViews[]{ n.bigContentView, n.headsUpContentView, n.contentView }) {
+            b = fromRemoteViews(rv);
+            if (big(b)) { source[0] = "customLayout"; return b; }
+        }
+        // Any other bitmap-like extra (some apps use their own keys).
+        for (String k : ex.keySet()) {
+            Object v = ex.get(k);
+            if (v instanceof Bitmap || v instanceof Icon) {
+                b = bitmapFrom(v);
+                if (big(b)) { source[0] = "extra:" + k; return b; }
+            }
+        }
+        b = n.getLargeIcon() != null ? toBitmap(n.getLargeIcon().loadDrawable(this)) : bitmapFrom(ex.get(Notification.EXTRA_LARGE_ICON));
+        if (big(b)) { source[0] = "largeIcon"; return b; }
+        return null;
+    }
+
+    /** Ignore small app logos — a snapshot is at least ~160px wide. */
+    private static boolean big(Bitmap b) { return b != null && b.getWidth() >= 160 && b.getHeight() >= 90; }
+
+    private Bitmap bitmapFrom(Object o) {
+        try {
+            if (o instanceof Bitmap) return (Bitmap) o;
+            if (o instanceof Icon) return toBitmap(((Icon) o).loadDrawable(this));
+        } catch (Throwable ignored) { }
+        return null;
+    }
+
+    private Bitmap fromRemoteViews(RemoteViews rv) {
+        if (rv == null) return null;
+        try {
+            View v = rv.apply(this, new FrameLayout(this));
+            return largestImage(v, null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static Bitmap largestImage(View v, Bitmap best) {
+        if (v instanceof ImageView) {
+            Bitmap b = toBitmap(((ImageView) v).getDrawable());
+            if (b != null && (best == null || (long) b.getWidth() * b.getHeight() > (long) best.getWidth() * best.getHeight())) best = b;
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) best = largestImage(g.getChildAt(i), best);
+        }
+        return best;
     }
 
     private static Bitmap toBitmap(Drawable d) {

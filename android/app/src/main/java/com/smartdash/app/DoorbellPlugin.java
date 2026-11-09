@@ -23,6 +23,8 @@ public class DoorbellPlugin extends Plugin {
 
     void emit(JSObject ev) { notifyListeners("event", ev, true); }
 
+    void emitDebug(JSObject ev) { notifyListeners("debug", ev); }
+
     private boolean eufyInstalled() {
         try {
             getContext().getPackageManager().getPackageInfo(EUFY, 0);
@@ -37,6 +39,7 @@ public class DoorbellPlugin extends Plugin {
         JSObject res = new JSObject();
         res.put("permission", EufyNotificationListener.isEnabled(getContext()));
         res.put("eufyInstalled", eufyInstalled());
+        res.put("lastDebug", DoorbellBridge.lastDebug);
         call.resolve(res);
     }
 

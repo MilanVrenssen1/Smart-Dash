@@ -123,7 +123,10 @@ export function startDoorbell() {
     const prev = seen.get(ev.key);
     const now = Date.now();
     if (prev && now - prev.at < 15000) {
-      if (ev.image && !prev.image && current) showDoorbell(ev, prev.kind);
+      if (ev.image && !prev.image) {
+        prev.image = true;
+        if (current) showDoorbell(ev, prev.kind); // the snapshot arrived a moment later — upgrade the popup
+      }
       return;
     }
     const kind = classify(ev);

@@ -16,11 +16,23 @@ final class DoorbellBridge {
         pending = null;
     }
 
+    /** Diagnostics about the last Eufy notification (shown in Settings → Doorbell). */
+    static volatile String lastDebug = "";
+
+    static synchronized void debug(String info) {
+        lastDebug = info;
+        if (plugin != null) {
+            JSObject ev = new JSObject();
+            ev.put("debug", info);
+            plugin.emitDebug(ev);
+        }
+    }
+
     static synchronized void detach(DoorbellPlugin p) {
         if (plugin == p) plugin = null;
     }
 
-    static synchronized void deliver(String key, String title, String text, String sub, String image, long time) {
+    static synchronized void deliver(String key, String title, String text, String sub, String image, long time, String debug) {
         JSObject ev = new JSObject();
         ev.put("key", key);
         ev.put("title", title);
@@ -28,6 +40,8 @@ final class DoorbellBridge {
         ev.put("sub", sub);
         ev.put("image", image);
         ev.put("time", time);
+        ev.put("debug", debug);
+        lastDebug = debug;
         if (plugin != null) plugin.emit(ev);
         else { pending = ev; pendingAt = System.currentTimeMillis(); }
     }

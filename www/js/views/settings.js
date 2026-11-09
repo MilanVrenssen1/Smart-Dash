@@ -179,7 +179,8 @@ export function render(root) {
     el.innerHTML = `
       <div class="db-check ${st.eufyInstalled ? 'ok' : 'bad'}">${icon(st.eufyInstalled ? 'check' : 'alert')}<span>${st.eufyInstalled ? 'Eufy Security app found' : 'Install and sign in to the Eufy Security app on this device'}</span></div>
       <div class="db-check ${st.permission ? 'ok' : 'bad'}">${icon(st.permission ? 'check' : 'alert')}<span>${st.permission ? 'Notification access granted' : 'Smart Dash needs notification access'}</span>
-        ${st.permission ? '' : '<button class="btn ghost sm-btn" data-a="db-perm">Grant</button>'}</div>`;
+        ${st.permission ? '' : '<button class="btn ghost sm-btn" data-a="db-perm">Grant</button>'}</div>
+      ${st.lastDebug ? `<details class="db-debug"><summary>Last Eufy notification</summary><code>${esc(st.lastDebug)}</code></details>` : ''}`;
   }).catch(() => {});
   refreshDoorbell();
   const refreshHome = () => panelStatus().then((st) => {
