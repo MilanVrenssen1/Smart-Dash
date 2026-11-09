@@ -14,12 +14,15 @@ import { typeDef } from './devices.js';
 import * as Home from './views/home.js';
 import * as Devices from './views/devices.js';
 import * as Scenes from './views/scenes.js';
+import * as Music from './views/music.js';
+import { initSpotify } from './spotify.js';
 import * as Energy from './views/energy.js';
 import * as Settings from './views/settings.js';
 
 const ROUTES = {
   home: { view: Home, label: 'Home', icon: 'home', rerenderOn: ['structure', 'scenes', 'settings'] },
   devices: { view: Devices, label: 'Devices', icon: 'grid', rerenderOn: ['structure'] },
+  music: { view: Music, label: 'Music', icon: 'music', rerenderOn: [] },
   scenes: { view: Scenes, label: 'Scenes', icon: 'sparkles', rerenderOn: ['scenes', 'routines'] },
   energy: { view: Energy, label: 'Energy', icon: 'bolt', rerenderOn: ['settings'] },
   settings: { view: Settings, label: 'Settings', icon: 'sliders', rerenderOn: [] },
@@ -235,6 +238,10 @@ function boot() {
   });
   window.addEventListener('resize', () => setActiveNav(current));
 
+  initSpotify(
+    () => { toast('Spotify connected', { icon: 'music', type: 'success' }); if (current === 'music') render('music'); else location.hash = '#/music'; },
+    (e) => toast('Spotify sign-in failed', { icon: 'alert', type: 'error', detail: e.message }),
+  );
   hub.start();
   startEnergy();
   startRoutines();

@@ -57,12 +57,28 @@ To change the app icon, replace `assets/icon.png` (1024×1024) and run
 
 | Service | What you need |
 |---|---|
+| **Spotify** | Music tab, with a one-time setup (see [Spotify](#spotify)). Play and pick which speaker or screen it plays on. |
 | **Google Home** | Android app only, with a one-time setup (see [Google Home](#google-home) below). Brings in your Matter lights and plugs with their rooms. |
 | **Home Assistant** | Your server URL plus a *long-lived access token* (Profile → Security → Long-lived access tokens). Rooms come in from your HA areas, and updates are live over WebSocket. |
 | **Philips Hue** | Tap **Find bridge**, press the bridge's link button, then tap **Pair**. |
 | **Sonos / IKEA SYMFONISK** | Each speaker's IP address (Sonos app → Settings → System → About My System). Supports play/pause, skip, volume and now-playing info. Android app only, because browsers block Sonos. |
 | **Shelly** | The IP address of each device. Gen 1 and Gen 2/3/4 devices both work, including power metering and roller shutters. |
 | **Custom HTTP** | An on URL and an off URL for each device, e.g. Tasmota `http://IP/cm?cmnd=Power%20On`. |
+
+## Spotify
+
+The **Music** tab plays Spotify and sends it to any Spotify Connect device in your home: your phone, TVs, Google Nest / Cast speakers, Sonos and SYMFONISK. You need **Spotify Premium**.
+
+One-time setup:
+1. Go to <https://developer.spotify.com/dashboard> and click **Create app**.
+2. Name it *Smart Dash* and tick **Web API**.
+3. Add the Redirect URI shown in the app:
+   - Android app: `com.smartdash.app://spotify-callback`
+   - Browser: `http://127.0.0.1:5173/`. Spotify doesn't accept `localhost`.
+4. Under **User Management**, add the email address of your Spotify account.
+5. Paste the app's **Client ID** into Smart Dash and tap **Connect Spotify**.
+
+Spotify only lists devices it has seen recently. If a speaker is missing, play to it once from the Spotify app, then tap **Refresh**.
 
 ## Google Home
 
