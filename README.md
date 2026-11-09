@@ -62,6 +62,7 @@ To change the app icon, replace `assets/icon.png` (1024×1024) and run
 | **Home Assistant** | Your server URL plus a *long-lived access token* (Profile → Security → Long-lived access tokens). Rooms come in from your HA areas, and updates are live over WebSocket. |
 | **Philips Hue** | Tap **Find bridge**, press the bridge's link button, then tap **Pair**. |
 | **Sonos / IKEA SYMFONISK** | Each speaker's IP address (Sonos app → Settings → System → About My System). Supports play/pause, skip, volume and now-playing info. Android app only, because browsers block Sonos. |
+| **Samsung TV** | The TV's IP address. Android app only. Power on/off, a full remote and opening installed apps. The first time, choose **Allow** on the TV. To turn the TV on from your phone, enable *Settings → General → Network → Expert Settings → Power On with Mobile* on the TV. |
 | **Shelly** | The IP address of each device. Gen 1 and Gen 2/3/4 devices both work, including power metering and roller shutters. |
 | **Custom HTTP** | An on URL and an off URL for each device, e.g. Tasmota `http://IP/cm?cmnd=Power%20On`. |
 

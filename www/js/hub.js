@@ -212,7 +212,7 @@ const ALLOWED = {
   light: ['on', 'brightness', 'color', 'colorTemp'],
   switch: ['on'], outlet: ['on'], fan: ['on', 'speed'],
   thermostat: ['mode', 'target'], lock: ['locked'], cover: ['position'],
-  media: ['on', 'playing', 'volume'], vacuum: [], sensor: [],
+  media: ['on', 'playing', 'volume'], tv: ['on'], vacuum: [], sensor: [],
 };
 function filterPatch(d, patch) {
   const allow = ALLOWED[d.type] || [];

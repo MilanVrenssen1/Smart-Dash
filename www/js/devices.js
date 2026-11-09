@@ -122,6 +122,14 @@ export const TYPES = {
     quick: (s) => ({ playing: !s.playing, on: true }),
     watts: (s, a) => (s.on === false ? 0.5 : s.playing ? a.watts || (a.kind === 'tv' ? 95 : 12) : 4),
   },
+  tv: {
+    label: 'TV', plural: 'TVs', icon: () => 'tv', toggle: true,
+    active: (s) => !!s.on || s.pending === 'on',
+    status: (s) => (s.pending === 'on' && !s.on ? 'Turning on…' : s.on ? 'On' : 'Off'),
+    glow: () => '#60a5fa',
+    watts: (s) => (s.on ? 110 : 0.5),
+    quick: (s) => ({ on: !(s.on || s.pending === 'on') }),
+  },
   vacuum: {
     label: 'Vacuum', plural: 'Vacuums', icon: () => 'vacuum', toggle: false, action: true,
     active: (s) => s.status === 'cleaning' || s.status === 'returning',
@@ -162,7 +170,7 @@ export const CATEGORIES = [
   { id: 'climate', label: 'Climate', icon: 'thermometer', match: (d) => d.type === 'thermostat' || d.type === 'fan' },
   { id: 'security', label: 'Security', icon: 'shield', match: (d) => d.type === 'lock' || (d.type === 'sensor' && ['door', 'window', 'motion', 'smoke', 'moisture', 'occupancy'].includes(d.state.kind)) || (d.type === 'cover' && d.attrs?.deviceClass === 'garage') },
   { id: 'cover', label: 'Blinds', icon: 'blinds', match: (d) => d.type === 'cover' },
-  { id: 'media', label: 'Media', icon: 'music', match: (d) => d.type === 'media' },
+  { id: 'media', label: 'Media & TV', icon: 'music', match: (d) => d.type === 'media' || d.type === 'tv' },
   { id: 'sensor', label: 'Sensors', icon: 'activity', match: (d) => d.type === 'sensor' },
   { id: 'other', label: 'Other', icon: 'more', match: (d) => d.type === 'vacuum' },
 ];

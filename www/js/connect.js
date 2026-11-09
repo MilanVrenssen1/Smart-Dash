@@ -8,7 +8,7 @@ import { INTEGRATIONS } from './integrations/index.js';
 import { openSheet, toast, haptic, confirmDialog } from './ui.js';
 
 const isNative = () => !!window.Capacitor?.isNativePlatform?.();
-const LOCAL = new Set(['hue', 'sonos', 'shelly', 'homeassistant', 'webhook']);
+const LOCAL = new Set(['hue', 'sonos', 'samsungtv', 'shelly', 'homeassistant', 'webhook']);
 
 export function integrationSummary(id) {
   const st = hub.statusOf(id);

@@ -8,6 +8,7 @@ import { INTEGRATIONS } from './integrations/index.js';
 import { typeDef, statusText, glowColor, lightColor, sensorKind, sensorText, MODE_LABEL, devIcon } from './devices.js';
 import { openSheet, haptic, segmented, promptDialog, confirmDialog, toast } from './ui.js';
 import { sensorHistory } from './energy.js';
+import { COMMON_APPS } from './integrations/samsungtv.js';
 
 const SWATCHES = ['#ff5f5f', '#ff9f43', '#ffd166', '#a3e635', '#34d399', '#22d3ee', '#3b82f6', '#6366f1', '#7c5cff', '#c084fc', '#f472b6', '#ffe4c4'];
 
@@ -621,9 +622,101 @@ function buildSensor(d, root) {
   return { update };
 }
 
+
+const APP_COLORS = { Netflix: '#e50914', YouTube: '#ff0000', 'Prime Video': '#00a8e1', 'Disney+': '#113ccf', Spotify: '#1ed760', 'Apple TV': '#222', Videoland: '#ff0b4d', 'NPO Start': '#ff6d00', Plex: '#e5a00d', Twitch: '#9146ff' };
+const appColor = (name) => APP_COLORS[name] || `hsl(${[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} 55% 42%)`;
+
+function buildTv(d, root) {
+  const id = d.id;
+  const key = (k) => { haptic(6); hub.command(id, 'key', k); };
+  root.innerHTML = `
+    <div class="ctl-hero col">
+      ${powerOrb(d.state.on, 'TV power')}
+      <p class="hero-caption"></p>
+      <p class="muted small tv-hint"></p>
+    </div>
+    <div class="tv-remote">
+      <div class="tv-side">
+        <button class="tv-key" data-k="KEY_VOLUP" aria-label="Volume up">${icon('plus')}</button>
+        <span class="tv-lbl">VOL</span>
+        <button class="tv-key" data-k="KEY_VOLDOWN" aria-label="Volume down">${icon('minus')}</button>
+      </div>
+      <div class="dpad">
+        <button class="dp-k up" data-k="KEY_UP" aria-label="Up">${icon('chevronUp')}</button>
+        <button class="dp-k left" data-k="KEY_LEFT" aria-label="Left">${icon('chevronLeft')}</button>
+        <button class="dp-ok" data-k="KEY_ENTER" aria-label="OK">OK</button>
+        <button class="dp-k right" data-k="KEY_RIGHT" aria-label="Right">${icon('chevronRight')}</button>
+        <button class="dp-k down" data-k="KEY_DOWN" aria-label="Down">${icon('chevronDown')}</button>
+      </div>
+      <div class="tv-side">
+        <button class="tv-key" data-k="KEY_CHUP" aria-label="Channel up">${icon('chevronUp')}</button>
+        <span class="tv-lbl">CH</span>
+        <button class="tv-key" data-k="KEY_CHDOWN" aria-label="Channel down">${icon('chevronDown')}</button>
+      </div>
+    </div>
+    <div class="tv-row">
+      <button class="tv-pill" data-k="KEY_RETURN">${icon('chevronLeft')}<span>Back</span></button>
+      <button class="tv-pill" data-k="KEY_HOME">${icon('home')}<span>Home</span></button>
+      <button class="tv-pill" data-k="KEY_PLAY">${icon('play')}<span>Play</span></button>
+      <button class="tv-pill" data-k="KEY_PAUSE">${icon('pause')}<span>Pause</span></button>
+      <button class="tv-pill" data-k="KEY_MUTE">${icon('volume')}<span>Mute</span></button>
+      <button class="tv-pill" data-k="KEY_SOURCE">${icon('layers')}<span>Source</span></button>
+    </div>
+    <div class="ctl-card">
+      <div class="card-head"><h4>Apps</h4><button class="link" data-a="reload-apps">${icon('refresh')} Refresh</button></div>
+      <div class="tv-apps"></div>
+    </div>`;
+
+  root.querySelector('[data-a="power"]').addEventListener('click', () => {
+    haptic(12);
+    const s = store.device(id).state;
+    hub.set(id, { on: !(s.on || s.pending === 'on') });
+  });
+  root.addEventListener('click', (e) => {
+    const k = e.target.closest('[data-k]');
+    if (k) {
+      k.classList.remove('hit'); void k.offsetWidth; k.classList.add('hit');
+      key(k.dataset.k);
+    }
+    const app = e.target.closest('[data-app]');
+    if (app) {
+      haptic([8, 30, 8]);
+      app.classList.add('launching');
+      setTimeout(() => app.classList.remove('launching'), 900);
+      hub.command(id, 'launch', app.dataset.app);
+      toast(`Opening ${app.dataset.name}`, { icon: 'tv' });
+    }
+    if (e.target.closest('[data-a="reload-apps"]')) hub.command(id, 'apps');
+  });
+
+  const update = (d) => {
+    const s = d.state;
+    const on = !!s.on;
+    const starting = s.pending === 'on' && !on;
+    root.classList.toggle('tv-off', !on);
+    const orb = root.querySelector('.orb');
+    orb.classList.toggle('on', on);
+    orb.classList.toggle('starting', starting);
+    root.querySelector('.hero-caption').textContent = starting ? 'Turning on…' : on ? 'On' : 'Off';
+    root.querySelector('.tv-hint').textContent = starting ? 'This can take up to 15 seconds' : on ? '' : (d.attrs.mac ? 'Tap to turn on' : 'Turn the TV on with its remote once so Smart Dash learns how to wake it');
+    const apps = d.attrs.apps?.length ? d.attrs.apps : COMMON_APPS;
+    const sig = apps.map((a) => a.appId).join();
+    const grid = root.querySelector('.tv-apps');
+    if (grid.dataset.sig !== sig) {
+      grid.dataset.sig = sig;
+      const pinned = COMMON_APPS.map((c) => c.name);
+      const sorted = [...apps].sort((a, b) => (pinned.indexOf(a.name) + 1 || 99) - (pinned.indexOf(b.name) + 1 || 99) || a.name.localeCompare(b.name));
+      grid.innerHTML = sorted.map((a, i) => `<button class="tv-app" data-app="${esc(a.appId)}" data-name="${esc(a.name)}" style="--c:${appColor(a.name)};--i:${i}">
+        <span class="tv-app-ic">${esc(a.name.replace(/[^A-Za-z0-9+]/g, '').slice(0, 2) || '?')}</span><span class="tv-app-n">${esc(a.name)}</span></button>`).join('');
+    }
+  };
+  update(d);
+  return { update };
+}
+
 const BUILDERS = {
   light: buildLight, switch: buildSwitch, outlet: buildSwitch, thermostat: buildThermostat,
-  lock: buildLock, cover: buildCover, fan: buildFan, media: buildMedia, vacuum: buildVacuum, sensor: buildSensor,
+  lock: buildLock, cover: buildCover, fan: buildFan, media: buildMedia, tv: buildTv, vacuum: buildVacuum, sensor: buildSensor,
 };
 
 /* ============ Device settings ============ */

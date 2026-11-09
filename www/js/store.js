@@ -41,6 +41,7 @@ const defaults = () => ({
     homeassistant: { enabled: false, url: '', token: '' },
     hue: { enabled: false, bridge: '', username: '' },
     sonos: { enabled: false, hosts: '' },
+    samsungtv: { enabled: false, hosts: '', tokens: {}, macs: {} },
     shelly: { enabled: false, hosts: '' },
     webhook: { enabled: false, devices: [] },
   },

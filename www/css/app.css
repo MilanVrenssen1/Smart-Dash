@@ -1062,3 +1062,29 @@ select.input option { background: var(--surface-solid); color: var(--text); }
 .sp-foot { margin-top: 28px; text-align: center; }
 .tab span { white-space: nowrap; }
 @media (max-width: 380px) { .tab { font-size: 10px; } .tab .i { width: 20px; height: 20px; } }
+
+/* ---------- Samsung TV remote ---------- */
+.orb.starting .orb-ring { opacity: 0.6; transform: scale(1); border-style: dashed; animation: spin 2.4s linear infinite; }
+.tv-remote { display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; gap: 14px; margin: 6px auto 14px; max-width: 380px; transition: opacity 0.3s; }
+.tv-off .tv-remote, .tv-off .tv-row, .tv-off .tv-apps { opacity: 0.4; pointer-events: none; }
+.tv-side { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px; border-radius: 32px; background: var(--surface-2); border: 1px solid var(--border); }
+.tv-key { width: 52px; height: 52px; border-radius: 50%; border: 0; background: transparent; color: var(--text); display: grid; place-items: center; transition: background 0.2s, transform 0.2s var(--spring); }
+.tv-key:active, .tv-key.hit { background: var(--surface-3); transform: scale(0.9); }
+.tv-lbl { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: var(--muted); }
+.dpad { position: relative; width: min(220px, 56vw); aspect-ratio: 1; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--surface-3), var(--surface-2)); border: 1px solid var(--border-strong); box-shadow: var(--shadow); }
+.dp-k { position: absolute; width: 33%; height: 33%; border: 0; background: transparent; color: var(--text); display: grid; place-items: center; border-radius: 50%; transition: background 0.2s, transform 0.2s var(--spring); }
+.dp-k .i { width: 26px; height: 26px; }
+.dp-k:active, .dp-k.hit { background: var(--surface-3); transform: scale(0.88); }
+.dp-k.up { top: 2%; left: 33.5%; } .dp-k.down { bottom: 2%; left: 33.5%; } .dp-k.left { left: 2%; top: 33.5%; } .dp-k.right { right: 2%; top: 33.5%; }
+.dp-ok { position: absolute; inset: 31%; border-radius: 50%; border: 0; font-weight: 800; font-size: 16px; letter-spacing: 0.04em; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 26px -10px var(--accent); transition: transform 0.25s var(--spring); }
+.dp-ok:active, .dp-ok.hit { transform: scale(0.9); }
+.tv-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 6px; }
+.tv-pill { display: flex; align-items: center; justify-content: center; gap: 7px; height: 46px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 13.5px; font-weight: 600; transition: transform 0.2s var(--spring), background 0.2s; }
+.tv-pill .i { width: 17px; height: 17px; }
+.tv-pill:active, .tv-pill.hit { transform: scale(0.94); background: var(--surface-3); }
+.tv-apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
+.tv-app { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 0; border: 0; background: none; color: var(--text); font-size: 12px; font-weight: 600; animation: cardIn 0.4s calc(min(var(--i), 14) * 25ms) var(--ease) both; transition: transform 0.25s var(--spring); }
+.tv-app:active { transform: scale(0.92); }
+.tv-app-ic { width: 100%; aspect-ratio: 16 / 10; border-radius: 14px; display: grid; place-items: center; background: var(--c); color: #fff; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; box-shadow: 0 10px 22px -14px var(--c); }
+.tv-app-n { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tv-app.launching .tv-app-ic { animation: firePulse 0.6s var(--spring); box-shadow: 0 0 0 3px var(--surface-solid), 0 0 0 5px var(--c); }
