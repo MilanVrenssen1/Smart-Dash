@@ -43,7 +43,7 @@ function navHTML(cls) {
 
 function buildChrome() {
   $('.sidebar').innerHTML = `
-    <a class="brand" href="#/home">${LOGO}<span>Smart<b>Dash</b></span></a>
+    <a class="brand" href="#/home">${LOGO}<span>Smart <b>Dash</b></span></a>
     <nav class="side-nav">${navHTML('side-link')}</nav>
     <button class="side-search" data-act="search">${icon('search')}<span>Search</span><kbd>⌘K</kbd></button>
     <div class="side-status" id="side-status"></div>`;

@@ -186,6 +186,7 @@ export function render(root) {
     if (!t) return;
     const prevW = t.querySelector('.w-now');
     const from = prevW ? +prevW.dataset.v : 0;
+    t.classList.remove('stagger'); // entrance animation only on first paint
     t.innerHTML = tilesHTML();
     const w = t.querySelector('.w-now');
     if (w) {

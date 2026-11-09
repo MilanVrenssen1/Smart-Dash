@@ -1,13 +1,19 @@
 import { store } from './store.js';
 
+// Metals. [dark-theme tone, highlight]; light theme uses deeper tones for contrast.
 export const ACCENTS = {
-  violet: ['#7c5cff', '#22d3ee'],
-  ocean: ['#3b82f6', '#2dd4bf'],
-  emerald: ['#10b981', '#a3e635'],
-  sunset: ['#f97316', '#f43f5e'],
-  rose: ['#ec4899', '#a855f7'],
-  gold: ['#eab308', '#f97316'],
-  mono: ['#a1a1aa', '#e4e4e7'],
+  champagne: ['#c9ab72', '#e4cf9f'],
+  platinum: ['#c3c6ca', '#e7e8ea'],
+  rosegold: ['#c9977f', '#e9c6b4'],
+  bronze: ['#b08157', '#d6ae84'],
+  sage: ['#a3b49c', '#cfd9c9'],
+};
+const ACCENTS_LIGHT = {
+  champagne: ['#94743a', '#b8975a'],
+  platinum: ['#6f747b', '#9a9fa6'],
+  rosegold: ['#9c6550', '#c08b75'],
+  bronze: ['#82582f', '#a87a4f'],
+  sage: ['#5f7559', '#87a07f'],
 };
 
 export const installPrompt = { event: null };
@@ -19,17 +25,18 @@ export function applyTheme() {
   const root = document.documentElement;
   const theme = s.theme === 'auto' ? (mq.matches ? 'light' : 'dark') : s.theme;
   root.dataset.theme = theme;
-  const [a, b] = ACCENTS[s.accent] || ACCENTS.violet;
+  const key = ACCENTS[s.accent] ? s.accent : 'champagne';
+  const [a, b] = (theme === 'light' ? ACCENTS_LIGHT : ACCENTS)[key];
   root.style.setProperty('--accent', a);
   root.style.setProperty('--accent-2', b);
   root.classList.toggle('reduce-motion', !!s.reduceMotion);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = theme === 'light' ? '#f4f5fa' : '#07080d';
+  if (meta) meta.content = theme === 'light' ? '#f4f1eb' : '#0b0b0c';
   // Native status bar (Capacitor) if the plugin is present.
   try {
     const SB = window.Capacitor?.Plugins?.StatusBar;
     SB?.setStyle?.({ style: theme === 'light' ? 'LIGHT' : 'DARK' });
-    SB?.setBackgroundColor?.({ color: theme === 'light' ? '#f4f5fa' : '#07080d' });
+    SB?.setBackgroundColor?.({ color: theme === 'light' ? '#f4f1eb' : '#0b0b0c' });
   } catch { /* not native */ }
 }
 

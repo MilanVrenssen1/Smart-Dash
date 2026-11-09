@@ -23,7 +23,7 @@ const defaults = () => ({
   settings: {
     name: '',
     theme: 'dark',          // dark | light | auto
-    accent: 'violet',
+    accent: 'champagne',
     haptics: true,
     reduceMotion: false,
     price: 0.3,              // per kWh

@@ -8,10 +8,10 @@
   },
   "android": {
     "allowMixedContent": true,
-    "backgroundColor": "#07080d"
+    "backgroundColor": "#0b0b0c"
   },
   "plugins": {
     "CapacitorHttp": { "enabled": true },
-    "StatusBar": { "overlaysWebView": false, "style": "DARK", "backgroundColor": "#07080d" }
+    "StatusBar": { "overlaysWebView": false, "style": "DARK", "backgroundColor": "#0b0b0c" }
   }
 }

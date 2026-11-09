@@ -1,8 +1,8 @@
 // Offline-first service worker: app shell is cached, device APIs always go to the network.
-const VERSION = 'smartdash-v1.6.1';
+const VERSION = 'smartdash-v2.0.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'fonts/plus-jakarta-sans-latin-wght-normal.woff2', 'fonts/plus-jakarta-sans-latin-ext-wght-normal.woff2',
+  'fonts/inter-latin-wght-normal.woff2', 'fonts/inter-latin-ext-wght-normal.woff2', 'fonts/cormorant-garamond-latin-400-normal.woff2', 'fonts/cormorant-garamond-latin-500-normal.woff2', 'fonts/cormorant-garamond-latin-500-italic.woff2',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
   'js/app.js', 'js/util.js', 'js/icons.js', 'js/store.js', 'js/devices.js', 'js/hub.js', 'js/ui.js',
   'js/cards.js', 'js/detail.js', 'js/energy.js', 'js/connect.js', 'js/palette.js', 'js/theme.js',

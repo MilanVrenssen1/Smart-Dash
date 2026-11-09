@@ -100,12 +100,7 @@ export function icon(name, cls = '') {
 }
 
 export const LOGO = `<svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
-  <defs>
-    <linearGradient id="lg-a" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/>
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#lg-a)"/>
-  <path d="M18 31 32 19l14 12v13a3 3 0 0 1-3 3H21a3 3 0 0 1-3-3z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M33.5 28 28 37h6l-1.5 7 6-9.5h-6z" fill="#fff"/>
+  <rect x="1" y="1" width="62" height="62" rx="18" fill="#0b0b0c" stroke="var(--accent)" stroke-opacity=".55" stroke-width="1"/>
+  <path d="M20 33.5 32 23l12 10.5V44a1.5 1.5 0 0 1-1.5 1.5h-21A1.5 1.5 0 0 1 20 44z" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle cx="32" cy="37.5" r="2.2" fill="var(--accent)"/>
 </svg>`;

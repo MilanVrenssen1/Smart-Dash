@@ -22,7 +22,7 @@ function barsSVG(data, grow = false) {
   const bw = Math.max(4, slot - 4);
   const grid = [0, 0.5, 1].map((f) => {
     const y = PAD_T + ih - f * ih;
-    return `<line x1="${PAD_L}" x2="${W}" y1="${y}" y2="${y}" class="gl"/><text x="${PAD_L - 6}" y="${y + 4}" class="ax" text-anchor="end">${fmtNum(max * f, max < 1 ? 1 : 0)}</text>`;
+    return `<line x1="${PAD_L}" x2="${W}" y1="${y}" y2="${y}" class="gl"/><text x="${PAD_L - 6}" y="${y + 4}" class="ax" text-anchor="end">${fmtNum(max * f, max < 10 ? 1 : 0)}</text>`;
   }).join('');
   const bars = data.map((d, i) => {
     const h = Math.max(d.kwh > 0 ? 3 : 0, (d.kwh / max) * ih);
