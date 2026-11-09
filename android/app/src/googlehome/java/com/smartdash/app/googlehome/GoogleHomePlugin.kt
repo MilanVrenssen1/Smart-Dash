@@ -28,6 +28,16 @@ import com.google.home.matter.standard.OnOff
 import com.google.home.matter.standard.OnOffLightDevice
 import com.google.home.matter.standard.OnOffPluginUnitDevice
 import com.google.home.matter.standard.SpeakerDevice
+import com.google.home.google.GoogleTVDevice
+import com.google.home.google.GoogleSoundbarDevice
+import com.google.home.google.GoogleStreamingSoundbarDevice
+import com.google.home.google.GoogleStreamingStickDevice
+import com.google.home.google.GoogleStreamingBoxDevice
+import com.google.home.google.GoogleAudioVideoReceiverDevice
+import com.google.home.matter.standard.CastingVideoPlayerDevice
+import com.google.home.matter.standard.BasicVideoPlayerDevice
+import com.google.home.matter.standard.RootNodeDevice
+import com.google.home.matter.standard.BasicInformation
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +72,7 @@ class GoogleHomePlugin : Plugin() {
 
     override fun load() {
         val registry = FactoryRegistry(
-            traits = listOf(OnOff, LevelControl, ColorControl),
+            traits = listOf(OnOff, LevelControl, ColorControl, BasicInformation),
             types = listOf(
                 OnOffLightDevice,
                 DimmableLightDevice,
@@ -71,6 +81,16 @@ class GoogleHomePlugin : Plugin() {
                 OnOffPluginUnitDevice,
                 DimmablePlugInUnitDevice,
                 SpeakerDevice,
+                // Google speakers / Cast / streaming devices (Nest Mini & co. may use one of these)
+                GoogleTVDevice,
+                GoogleSoundbarDevice,
+                GoogleStreamingSoundbarDevice,
+                GoogleStreamingStickDevice,
+                GoogleStreamingBoxDevice,
+                GoogleAudioVideoReceiverDevice,
+                CastingVideoPlayerDevice,
+                BasicVideoPlayerDevice,
+                RootNodeDevice,
             ),
         )
         home = Home.getClient(
@@ -133,8 +153,12 @@ class GoogleHomePlugin : Plugin() {
                     } else {
                         // Report what Google shared but Smart Dash can't control yet, for troubleshooting.
                         val typeNames = try {
-                            device.types().first().joinToString(", ") { it.javaClass.simpleName }
-                        } catch (e: Throwable) { "unknown" }
+                            val names = device.types().first().map { it.javaClass.simpleName }.filter { it != "RootNodeDevice" }
+                            val product = if (device.has(RootNodeDevice)) {
+                                device.type(RootNodeDevice).first().standardTraits.basicInformation?.let { "${it.vendorName ?: ""} ${it.productName ?: ""}".trim() }
+                            } else null
+                            listOfNotNull(names.joinToString(", ").ifEmpty { "unregistered type" }, product?.ifEmpty { null }).joinToString(" · ")
+                        } catch (e: Throwable) { "unknown (${e.javaClass.simpleName})" }
                         Log.i(TAG, "Unsupported device '${device.name}': $typeNames")
                         unsupported.put(JSObject().put("name", device.name).put("types", typeNames))
                     }
@@ -261,6 +285,14 @@ class GoogleHomePlugin : Plugin() {
         d.has(DimmablePlugInUnitDevice) -> d.type(DimmablePlugInUnitDevice).first()
         d.has(OnOffPluginUnitDevice) -> d.type(OnOffPluginUnitDevice).first()
         d.has(SpeakerDevice) -> d.type(SpeakerDevice).first()
+        d.has(GoogleTVDevice) -> d.type(GoogleTVDevice).first()
+        d.has(GoogleSoundbarDevice) -> d.type(GoogleSoundbarDevice).first()
+        d.has(GoogleStreamingSoundbarDevice) -> d.type(GoogleStreamingSoundbarDevice).first()
+        d.has(GoogleStreamingStickDevice) -> d.type(GoogleStreamingStickDevice).first()
+        d.has(GoogleStreamingBoxDevice) -> d.type(GoogleStreamingBoxDevice).first()
+        d.has(GoogleAudioVideoReceiverDevice) -> d.type(GoogleAudioVideoReceiverDevice).first()
+        d.has(CastingVideoPlayerDevice) -> d.type(CastingVideoPlayerDevice).first()
+        d.has(BasicVideoPlayerDevice) -> d.type(BasicVideoPlayerDevice).first()
         else -> null
     }
 
@@ -272,12 +304,20 @@ class GoogleHomePlugin : Plugin() {
         d.has(DimmablePlugInUnitDevice) -> d.type(DimmablePlugInUnitDevice)
         d.has(OnOffPluginUnitDevice) -> d.type(OnOffPluginUnitDevice)
         d.has(SpeakerDevice) -> d.type(SpeakerDevice)
+        d.has(GoogleTVDevice) -> d.type(GoogleTVDevice)
+        d.has(GoogleSoundbarDevice) -> d.type(GoogleSoundbarDevice)
+        d.has(GoogleStreamingSoundbarDevice) -> d.type(GoogleStreamingSoundbarDevice)
+        d.has(GoogleStreamingStickDevice) -> d.type(GoogleStreamingStickDevice)
+        d.has(GoogleStreamingBoxDevice) -> d.type(GoogleStreamingBoxDevice)
+        d.has(GoogleAudioVideoReceiverDevice) -> d.type(GoogleAudioVideoReceiverDevice)
+        d.has(CastingVideoPlayerDevice) -> d.type(CastingVideoPlayerDevice)
+        d.has(BasicVideoPlayerDevice) -> d.type(BasicVideoPlayerDevice)
         else -> null
     }
 
     private fun describe(d: HomeDevice, type: DeviceType, rooms: Map<String, String>): JSObject {
         val isPlug = type is OnOffPluginUnitDevice || type is DimmablePlugInUnitDevice
-        val isSpeaker = type is SpeakerDevice
+        val isSpeaker = type is SpeakerDevice || type is GoogleTVDevice || type is GoogleSoundbarDevice || type is GoogleStreamingSoundbarDevice || type is GoogleStreamingStickDevice || type is GoogleStreamingBoxDevice || type is GoogleAudioVideoReceiverDevice || type is CastingVideoPlayerDevice || type is BasicVideoPlayerDevice
         val onOff = type.trait(OnOff)
         val level = type.trait(LevelControl)
         val color = type.trait(ColorControl)
