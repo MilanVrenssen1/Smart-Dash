@@ -62,7 +62,9 @@ public class EufyNotificationListener extends NotificationListenerService {
             String size = pic != null ? " " + pic.getWidth() + "x" + pic.getHeight() : "";
             String debug = "picture: " + source[0] + size + " · keys: " + android.text.TextUtils.join(",", ex.keySet())
                 + " · custom layout: " + (n.bigContentView != null || n.contentView != null ? "yes" : "no")
-                + " · style: " + ex.getString(Notification.EXTRA_TEMPLATE, "-");
+                + " · style: " + ex.getString(Notification.EXTRA_TEMPLATE, "-")
+                + " · largeIcon: " + describe(n.getLargeIcon() != null ? n.getLargeIcon() : ex.get(Notification.EXTRA_LARGE_ICON))
+                + " · v2";
 
             if (pic == null && attempt < 2) {
                 // Deliver the text now; check again for a picture in a moment.
@@ -89,6 +91,12 @@ public class EufyNotificationListener extends NotificationListenerService {
         } catch (Throwable t) {
             Log.w(TAG, "recheck failed", t);
         }
+    }
+
+    private String describe(Object o) {
+        if (o == null) return "empty";
+        Bitmap b = bitmapFrom(o);
+        return b != null ? b.getWidth() + "x" + b.getHeight() : o.getClass().getSimpleName();
     }
 
     private static String str(CharSequence c) { return c != null ? c.toString() : ""; }
