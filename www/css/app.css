@@ -1703,3 +1703,38 @@ html, body { background-color: var(--bg); }
 [data-theme='light'] .tv-app-ic.has-logo img { filter: grayscale(1) sepia(0.35) brightness(0.9) contrast(1.1); }
 .tv-app-ic:not(.has-img):not(.has-logo) { box-shadow: none; color: var(--muted); }
 .tv-app-ic.has-logo img { filter: grayscale(1) brightness(1.8) sepia(0.45) contrast(0.95); opacity: 0.9; }
+
+/* ---------- Doorbell popup ---------- */
+.doorbell-pop { position: fixed; inset: 0; z-index: 400; display: flex; align-items: flex-start; justify-content: center; padding: calc(var(--sa-top) + 16px) 16px 16px; background: rgba(5, 5, 6, 0); transition: background 0.5s var(--ease); pointer-events: auto; }
+.doorbell-pop.in { background: rgba(5, 5, 6, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+@media (min-width: 900px) { .doorbell-pop { justify-content: flex-end; padding: 28px; } }
+.db-card { position: relative; width: min(440px, 100%); overflow: hidden; border-radius: 24px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); background: var(--surface-solid); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.9); transform: translateY(-24px) scale(0.98); opacity: 0; transition: transform 0.6s var(--ease), opacity 0.45s var(--ease); }
+.doorbell-pop.in .db-card { transform: none; opacity: 1; }
+.db-media { position: relative; aspect-ratio: 16 / 10; background: #121110; }
+.db-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.db-media.empty { display: grid; place-items: center; aspect-ratio: 16 / 7; }
+.db-ph { color: var(--faint); }
+.db-ph .i { width: 40px; height: 40px; stroke-width: 1.2; }
+.db-live { position: absolute; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border-radius: 99px; background: rgba(8, 8, 9, 0.6); backdrop-filter: blur(8px); color: #eee9e0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.db-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1.2s ease-in-out infinite; }
+.k-ring .db-live i { background: #d98d7d; }
+.db-body { padding: 18px 20px 20px; }
+.db-body .eyebrow { margin-bottom: 6px; }
+.db-title { font-family: var(--serif); font-weight: 500; font-size: 30px; line-height: 1.08; }
+.db-detail { margin-top: 8px; color: var(--muted); font-size: 13.5px; }
+.db-actions { display: flex; gap: 10px; margin-top: 18px; }
+.db-actions .btn { flex: 1; }
+.db-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--border); }
+.db-timer i { display: block; height: 100%; background: var(--accent); transform-origin: left; animation: dbTimer var(--ttl, 30s) linear forwards; }
+@keyframes dbTimer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.k-ring.in .db-card { animation: dbRing 1.2s var(--ease) 0.25s; }
+@keyframes dbRing { 15% { transform: rotate(-1.2deg); } 30% { transform: rotate(1.2deg); } 45% { transform: rotate(-0.8deg); } 60% { transform: rotate(0.6deg); } 100% { transform: none; } }
+
+/* Settings */
+.db-status { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 10px; }
+.db-check { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.db-check .i { width: 16px; height: 16px; }
+.db-check span { flex: 1; }
+.db-check.ok { color: var(--ok); }
+.db-check.bad { color: var(--warn); }
+.sm-btn { height: 34px; padding: 0 14px; font-size: 13px; }

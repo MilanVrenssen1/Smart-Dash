@@ -120,6 +120,14 @@ In PowerShell, inside the `android` folder, run `.\gradlew.bat signingReport`. C
 
 Supported now: on/off lights, dimmable lights, colour-temperature lights, colour lights and plugs. The native code is in `android/app/src/googlehome/` and the web side is in `www/js/integrations/googlehome.js`.
 
+## Doorbell popups (Eufy)
+
+Eufy has no public API, so Smart Dash uses the **Eufy Security app's notifications** on the same device instead:
+- When the doorbell rings or sees someone, it shows a popup with the snapshot, a soft chime, and an **Open Eufy** button for the live view.
+- The wall panel wakes from its night clock when this happens.
+
+To set it up, go to **Settings → Doorbell** and grant notification access. Smart Dash only reads Eufy's notifications. For snapshots in the popup, Eufy's notification style has to include the thumbnail.
+
 ## Wall panel (tablet)
 
 Turn a spare tablet into a dedicated control panel with **Settings → Wall panel**:

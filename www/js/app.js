@@ -18,6 +18,7 @@ import * as Music from './views/music.js';
 import * as Room from './views/room.js';
 import { initSpotify } from './spotify.js';
 import { startPanel, panelSettings } from './panel.js';
+import { startDoorbell } from './doorbell.js';
 import * as Energy from './views/energy.js';
 import * as Settings from './views/settings.js';
 
@@ -251,6 +252,7 @@ function boot() {
     (e) => toast('Spotify sign-in failed', { icon: 'alert', type: 'error', detail: e.message }),
   );
   startPanel();
+  startDoorbell();
   hub.start();
   startEnergy();
   startRoutines();

@@ -4,6 +4,7 @@ import { store, guessRoomIcon } from '../store.js';
 import { integrationsListHTML, wireIntegrationList } from '../connect.js';
 import { haptic, toast, confirmDialog, promptDialog, segmented, openSheet } from '../ui.js';
 import { ACCENTS, applyTheme, installPrompt } from '../theme.js';
+import { doorbellSettings, isNativeDoorbell, doorbellStatus, openDoorbellPermission, testDoorbell } from '../doorbell.js';
 import { panelSettings, settingsLocked, tryUnlock, lockNow, isNativePanel, panelStatus, setHomeApp, openSystemSettings, previewClock } from '../panel.js';
 
 const ROOM_ICONS = ['sofa', 'bed', 'baby', 'utensils', 'bath', 'monitor', 'car', 'tree', 'door', 'home', 'layers', 'heart'];
@@ -62,6 +63,23 @@ function renderLock(root) {
   return () => root.removeEventListener('click', onClick);
 }
 
+function doorbellHTML() {
+  const d = doorbellSettings();
+  return `<section class="ctl-card" id="doorbell-card">
+      <div class="card-head"><h4>Doorbell</h4></div>
+      <p class="muted small panel-intro">Show a popup with a snapshot when your Eufy doorbell rings or sees someone — taken from the Eufy Security app’s notifications on this device.</p>
+      ${isNativeDoorbell() ? `<div class="db-status" id="db-status"><span class="muted small">Checking…</span></div>` : `<p class="meta">${icon('info')} Doorbell popups work in the Android app on a device with the Eufy Security app.</p>`}
+      <button class="row" data-db-opt="enabled">${icon('bell')}<span>Doorbell popups</span><span class="tgl sm ${d.enabled ? 'on' : ''}"><i></i></span></button>
+      <div class="panel-opts ${d.enabled ? '' : 'off'}" id="db-opts">
+        <button class="row" data-db-opt="ring">${icon('door')}<span>When someone rings</span><span class="tgl sm ${d.ring ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-db-opt="person">${icon('user')}<span>When a person or package is detected</span><span class="tgl sm ${d.person ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-db-opt="motion">${icon('motion')}<span>On any motion</span><span class="tgl sm ${d.motion ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-db-opt="chime">${icon('volume')}<span>Soft chime when it rings</span><span class="tgl sm ${d.chime ? 'on' : ''}"><i></i></span></button>
+        <button class="row" data-a="db-test">${icon('eye')}<span>Show a test popup</span>${icon('chevronRight', 'chev')}</button>
+      </div>
+    </section>`;
+}
+
 function panelHTML() {
   const p = panelSettings();
   const native = isNativePanel();
@@ -115,6 +133,8 @@ export function render(root) {
 
     ${panelHTML()}
 
+    ${doorbellHTML()}
+
     <section class="ctl-card">
       <div class="card-head"><h4>Rooms</h4><button class="link" data-a="add-room">${icon('plus')} Add room</button></div>
       <div id="rooms">${roomsHTML()}</div>
@@ -153,12 +173,21 @@ export function render(root) {
   const awakeSeg = root.querySelector('#pn-awake');
   if (awakeSeg) segmented(awakeSeg, panelSettings().awake, (v) => savePanel({ awake: v }));
   root.querySelector('[data-pn-select="clockAfter"]')?.addEventListener('change', (e) => savePanel({ clockAfter: +e.target.value }));
+  const refreshDoorbell = () => doorbellStatus().then((st) => {
+    const el = root.querySelector('#db-status');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="db-check ${st.eufyInstalled ? 'ok' : 'bad'}">${icon(st.eufyInstalled ? 'check' : 'alert')}<span>${st.eufyInstalled ? 'Eufy Security app found' : 'Install and sign in to the Eufy Security app on this device'}</span></div>
+      <div class="db-check ${st.permission ? 'ok' : 'bad'}">${icon(st.permission ? 'check' : 'alert')}<span>${st.permission ? 'Notification access granted' : 'Smart Dash needs notification access'}</span>
+        ${st.permission ? '' : '<button class="btn ghost sm-btn" data-a="db-perm">Grant</button>'}</div>`;
+  }).catch(() => {});
+  refreshDoorbell();
   const refreshHome = () => panelStatus().then((st) => {
     const el = root.querySelector('#home-state');
     if (el) el.textContent = st.isHome ? 'On' : st.homeEnabled ? 'Choose in Android' : 'Off';
   }).catch(() => {});
   refreshHome();
-  const onVis = () => { if (document.visibilityState === 'visible') refreshHome(); };
+  const onVis = () => { if (document.visibilityState === 'visible') { refreshHome(); refreshDoorbell(); } };
   document.addEventListener('visibilitychange', onVis);
 
   const install = root.querySelector('.install-row');
@@ -190,7 +219,19 @@ export function render(root) {
       haptic(6);
       return;
     }
+    const dbo = e.target.closest('[data-db-opt]');
+    if (dbo) {
+      const k = dbo.dataset.dbOpt;
+      const v = !doorbellSettings()[k];
+      store.setSettings({ doorbell: { ...doorbellSettings(), [k]: v } });
+      dbo.querySelector('.tgl').classList.toggle('on', v);
+      if (k === 'enabled') root.querySelector('#db-opts').classList.toggle('off', !v);
+      haptic(6);
+      return;
+    }
     const pa = e.target.closest('[data-a]')?.dataset.a;
+    if (pa === 'db-test') { testDoorbell(); return; }
+    if (pa === 'db-perm') { openDoorbellPermission(); toast('Turn on “Smart Dash”', { icon: 'bell', detail: 'Android will warn that it can read notifications — Smart Dash only looks at Eufy’s.', duration: 6000 }); return; }
     if (pa === 'pin') {
       const cur = panelSettings().pin;
       const val = await promptDialog({ title: cur ? 'Change or remove PIN' : 'Set a PIN', label: 'PIN for Settings (4–8 digits, leave empty to remove)', value: '', placeholder: '••••', confirm: 'Save' });
