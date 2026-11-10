@@ -40,6 +40,7 @@ public class DoorbellPlugin extends Plugin {
         res.put("permission", EufyNotificationListener.isEnabled(getContext()));
         res.put("eufyInstalled", eufyInstalled());
         res.put("lastDebug", DoorbellBridge.lastDebug);
+        res.put("history", DoorbellBridge.historyText());
         call.resolve(res);
     }
 

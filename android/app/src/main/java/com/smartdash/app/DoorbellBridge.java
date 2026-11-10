@@ -18,6 +18,18 @@ final class DoorbellBridge {
 
     /** Diagnostics about the last Eufy notification (shown in Settings → Doorbell). */
     static volatile String lastDebug = "";
+    private static final java.util.ArrayDeque<String> history = new java.util.ArrayDeque<>();
+
+    /** The last few Eufy notifications, newest first, for Settings → Doorbell. */
+    static synchronized String historyText() {
+        return android.text.TextUtils.join("\n\n", history);
+    }
+
+    static synchronized void record(String line) {
+        String stamp = new java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(new java.util.Date());
+        history.addFirst(stamp + "  " + line);
+        while (history.size() > 6) history.removeLast();
+    }
 
     static synchronized void debug(String info) {
         lastDebug = info;

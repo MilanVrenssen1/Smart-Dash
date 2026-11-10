@@ -66,6 +66,12 @@ public class EufyNotificationListener extends NotificationListenerService {
                 + " · largeIcon: " + describe(n.getLargeIcon() != null ? n.getLargeIcon() : ex.get(Notification.EXTRA_LARGE_ICON))
                 + " · v2";
 
+            DoorbellBridge.record("#" + sbn.getId() + (attempt > 0 ? " (re-check " + attempt + ")" : "")
+                + " · " + str(title) + " — " + str(text)
+                + " · channel: " + (Build.VERSION.SDK_INT >= 26 ? n.getChannelId() : "-")
+                + " · group: " + (n.getGroup() != null ? n.getGroup() : "-")
+                + " · " + debug);
+
             if (pic == null && attempt < 2) {
                 // Deliver the text now; check again for a picture in a moment.
                 if (attempt == 0) DoorbellBridge.deliver(sbn.getKey(), str(title), str(text), str(sub), null, sbn.getPostTime(), debug);
